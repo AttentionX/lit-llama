@@ -35,7 +35,7 @@ def prepare(destination_path: Path = Path("data/shakespeare")) -> None:
     destination_path.mkdir(parents=True, exist_ok=True)
 
     # download the tiny shakespeare dataset
-    input_file_path = destination_path / input.txt
+    input_file_path = destination_path / "input.txt"
     if not input_file_path.exists():
         data_url = "https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt"
         with open(input_file_path, "w") as f:
