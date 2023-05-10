@@ -6,7 +6,9 @@ import os
 import json
 import sys
 from pathlib import Path
+from tqdm import tqdm
 
+from lit_llama import Tokenizer
 import openai_api
 
 # support running without installing as a package
@@ -21,9 +23,34 @@ QA_DATA_PATH = Path('../data/qa')
 # 2: QA
 TYPE = 2
 
+IGNORE_INDEX = -1
+
 urls = [
     'https://arxiv.org/pdf/2303.08774.pdf',
 ]
+
+# Prepare a dataset with the qa jsonl file
+def prepareQADataset(file_path, destination_path:Path, max_seq_length: int = 256, mask_inputs_for_label: bool = True, add_prior_prompt=False):
+    tokenizer = Tokenizer(TOKENIZER_PATH)
+    with open(file_path, "r") as file:
+        data = list(json.load(file))
+    dataset = [prepare_sample(sample, tokenizer, max_seq_length, mask_inputs_for_label, add_prior_prompt) for sample in tqdm(data)]
+
+def prepare_sample(sample, tokenizer, max_seq_length, mask_inputs, add_prior_prompt):
+    prior_prompt = """
+    Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.\n\n
+    """
+    question = sample['question']
+    answer = sample['answer']
+    if add_prior_prompt is False:
+        prior_prompt = ''
+    encoded_question = tokenizer.encode(f"{prior_prompt}{question}")
+    encoded_full = tokenizer.encode(f'{prior_prompt}{question}\n{answer}')
+    labels = encoded_full.clone()
+    if mask_inputs:
+        labels[:len(encoded_question)] = IGNORE_INDEX
+    return {**sample, "input_ids": encoded_full, "input_ids_no_response": encoded_question, "labels": labels}
+    
 
 # Prepare dataset in q&a format
 def prepareQA(text, destination_path:Path, title):
@@ -64,7 +91,6 @@ def prepareQA(text, destination_path:Path, title):
 # Prepare dataset for arxiv articles
 def parseArxiv(text, destination_path: Path = Path("data/alpaca")):
     """Prepare the "Tiny Shakespeare" dataset."""
-    from lit_llama import Tokenizer
     print(f"Preparing the arxiv dataset ... {len(text)} characters")
     title = text.split('\n')[0]
 
