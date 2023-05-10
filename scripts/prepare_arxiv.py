@@ -47,12 +47,17 @@ def prepareQA(text, destination_path:Path, title):
         answer = answer.split('\n')
         jsonl.extend(answer)
         i += 1
-        if i == 5:
-            break
+        # if i == 5:
+        #     break
     
-    # Save answer to jsonl file
-    with open(destination_path / f'{title}.jsonl', 'w') as f:
+    # Save answer to jsonl file, switch to append mode 'a' if file already exists
+    mode = 'w'
+    if os.path.exists(destination_path / f'{title}.jsonl'):
+        mode = 'a'
+    with open(destination_path / f'{title}.jsonl', mode) as f:
         for obj in jsonl:
+            if obj[-1] != '}':
+                continue
             data = json.loads(obj)
             f.write(json.dumps(data) + '\n')
 
@@ -68,7 +73,7 @@ def parseArxiv(text, destination_path: Path = Path("data/alpaca")):
     text_ids = tokenizer.encode(text)
     print(f"{title} has {len(text_ids):,} tokens")
     text_ids = np.array(text_ids, dtype=np.uint16)
-    text_ids.tofile(destination_path / f"{title}.bin")
+    text_ids.tofile(destination_path / f"{title}_raw.bin")
 
 def retrieveArxiv(url, option=1):
     # Download the PDF file from the URL
@@ -85,7 +90,7 @@ def retrieveArxiv(url, option=1):
     for page_num in range(len(pdf_reader.pages)):
         page = pdf_reader.pages[page_num]
         text += page.extract_text()
-        if page_num == 10:
+        if page_num == 30:
             break
     
     title = text.split('\n')[0]
