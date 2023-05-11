@@ -7,21 +7,25 @@ import json
 import sys
 from pathlib import Path
 from tqdm import tqdm
+import torch
 
-from lit_llama import Tokenizer
 import openai_api
 
 # support running without installing as a package
 wd = Path(__file__).parent.parent.resolve()
 sys.path.append(str(wd))
 
+from lit_llama import Tokenizer
+
 TOKENIZER_PATH = '/Users/adamlee/Downloads/AttentionX/models/llama/tokenizer/tokenizer.model'
 TOKENIZED_DATA_PATH = Path('../data/tokenized')
 QA_DATA_PATH = Path('../data/qa')
+QA_DATASET_PATH = Path('../data/qa_dataset')
 
 # 1: Tokenize
 # 2: QA
-TYPE = 2
+# 3: QA Dataset
+TYPE = 3
 
 IGNORE_INDEX = -1
 
@@ -32,11 +36,16 @@ urls = [
 # Prepare a dataset with the qa jsonl file
 def prepareQADataset(file_path, destination_path:Path, max_seq_length: int = 256, mask_inputs_for_label: bool = True, add_prior_prompt=False):
     tokenizer = Tokenizer(TOKENIZER_PATH)
-    with open(file_path, "r") as file:
-        data = list(json.load(file))
-    dataset = [prepare_sample(sample, tokenizer, max_seq_length, mask_inputs_for_label, add_prior_prompt) for sample in tqdm(data)]
 
-def prepare_sample(sample, tokenizer, max_seq_length, mask_inputs, add_prior_prompt):
+    data = []
+    with open(file_path, "r") as file:
+        for line in file:
+            json_object = json.load(line)
+            data.append(json_object)
+    dataset = [prepare_sample(sample, tokenizer, max_seq_length, mask_inputs_for_label, add_prior_prompt) for sample in tqdm(data)]
+    torch.save(dataset, destination_path / "qa.pt")
+
+def prepare_sample(sample, tokenizer, mask_inputs, add_prior_prompt=False, max_seq_length=256):
     prior_prompt = """
     Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.\n\n
     """
@@ -131,6 +140,8 @@ def retrieveArxiv(url, option=1):
         parseArxiv(text, TOKENIZED_DATA_PATH)
     elif option == 2:
         prepareQA(text, QA_DATA_PATH, title)
+    elif option == 3:
+        prepareQADataset(QA_DATA_PATH / 'GPT-4 Technical Report.jsonl', QA_DATASET_PATH)
 
 if __name__ == '__main__':
     for url in urls:
