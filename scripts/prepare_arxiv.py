@@ -37,10 +37,11 @@ urls = [
 def prepareQADataset(file_path, destination_path:Path, max_seq_length: int = 256, mask_inputs_for_label: bool = True, add_prior_prompt=False):
     tokenizer = Tokenizer(TOKENIZER_PATH)
 
+    # Fix reading jsonl file
     data = []
     with open(file_path, "r") as file:
         for line in file:
-            json_object = json.load(line)
+            json_object = json.loads(line)
             data.append(json_object)
     dataset = [prepare_sample(sample, tokenizer, max_seq_length, mask_inputs_for_label, add_prior_prompt) for sample in tqdm(data)]
     torch.save(dataset, destination_path / "qa.pt")
