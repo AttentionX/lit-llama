@@ -46,23 +46,33 @@ def save_model_checkpoint(fabric, model, file_path):
 
     if isinstance(fabric.strategy, DeepSpeedStrategy):
         from deepspeed.utils.zero_to_fp32 import convert_zero_checkpoint_to_fp32_state_dict
-
+        
+        # If Strategy is DeepSpeed, model parameters are saved separately within each process
+        # Separetely saved model parameters are not Standard PyTorch state_dict file
         fabric.save(file_path, {"model": model})
+        # wait for all processes to enter this call
         fabric.barrier()
+        
+        # process 0 will convert the checkpoint files to consolidated standard pytorch state_dict file
         if fabric.global_rank == 0:
             # Create a consolidated checkpoint with the same name next to the deepspeed checkpoint
             convert_zero_checkpoint_to_fp32_state_dict(file_path, file_path.with_suffix(".pth"))
         return
 
+
     if isinstance(fabric.strategy, FSDPStrategy):
+        # Set Config to save full state_dict on rank(process) 0 only and move it to CPU
         save_policy = FullStateDictConfig(offload_to_cpu=(fabric.world_size > 1), rank0_only=True)
         with FSDP.state_dict_type(model, StateDictType.FULL_STATE_DICT, save_policy):
             state_dict = model._forward_module.state_dict()
     else:
         state_dict = model.state_dict()
 
+    # process 0 will save consolidated standard pytorch state_dict file
     if fabric.global_rank == 0:
         torch.save(state_dict, file_path)
+    
+    # wait for all processes to enter this call
     fabric.barrier()
 
 

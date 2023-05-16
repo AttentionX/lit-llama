@@ -19,13 +19,14 @@ python -m scripts.convert_checkpoint converted
 
 def convert_state_dict(state_dict: Dict[str, torch.Tensor], dtype: torch.dtype = torch.float32) -> Dict[str, torch.Tensor]:
     converted = {}
+    # change layer's name from facebook official LLAMA format into lit-LLAMA format
     converted["transformer.wte.weight"] = state_dict["tok_embeddings.weight"].to(dtype)
     converted["lm_head.weight"] = state_dict["output.weight"].to(dtype)
     converted["transformer.ln_f.scale"] = state_dict["norm.weight"].to(dtype)
 
     for layer_idx in sorted(set([k.split(".")[1] for k in state_dict if k.startswith("layers")])):
         # attention
-        # the wq, wk, wv from the FB model are stacked in our model as c_attn
+        # the wq, wk, wv from the FaceBook model are stacked in our model as c_attn
         converted[f"transformer.h.{layer_idx}.attn.c_attn.weight"] = torch.cat(
             (
                 state_dict[f"layers.{layer_idx}.attention.wq.weight"].to(dtype),
@@ -82,6 +83,8 @@ def meta_weights_for_nano_model(
         raise ValueError(f"{dtype} is not a valid dtype.")
     dtype = dt
 
+    # for the bigger models, there are multiple model-parallel checkpoints
+    # if there are multiple model-parallel checkpoints, sort them by rank(process) number
     checkpoint_files = sorted(ckpt_dir.glob("*.pth"))
     checkpoint_files.sort()
     n_checkpoints = len(checkpoint_files)
@@ -94,10 +97,12 @@ def meta_weights_for_nano_model(
     combined = None
     for file in tqdm(checkpoint_files, total=n_checkpoints):
         checkpoint = torch.load(file, map_location="cpu")
+        # convert the Facebook official LLAMA Format into the lit-LLaMA format
         converted = convert_state_dict(checkpoint, dtype=dtype)
         if combined is None:
             combined = converted
             continue
+        # classify the layer type of each parameter and concatenate them
         for name, param in converted.items():
             dim = None
             for k, d in shard_dims.items():
@@ -114,6 +119,8 @@ def meta_weights_for_nano_model(
         del converted
         gc.collect()
 
+    # change the order of attention parameters 
+    # from facebook official LLAMA format into lit-LLAMA format
     for name, param in combined.items():
         if "c_attn" not in name:
             continue

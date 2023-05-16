@@ -13,7 +13,7 @@ sys.path.append(str(wd))
 from lit_llama.model import LLaMA, LLaMAConfig
 from lit_llama.utils import EmptyInitOnDevice
 
-
+# convert HuggingFace checkpoint file to lit-llama checkpoint state_dict file
 @torch.no_grad()
 def convert_hf_checkpoint(
     *,
@@ -47,6 +47,7 @@ def convert_hf_checkpoint(
     # initialize a new empty state dict to hold our new weights
     sd = model.state_dict()
 
+    # In HuggingFace, the open-LLAMA weights are stored separately in multiple files
     # Load the json file containing weight mapping
     pytorch_bin_map_json_path = checkpoint_dir / "pytorch_model.bin.index.json"
     with open(pytorch_bin_map_json_path) as json_map:
@@ -62,6 +63,7 @@ def convert_hf_checkpoint(
             .reshape(dim, dim)
         )
 
+    # map the layer names from the HuggingFace checkpoint to the lit-llama checkpoint
     weight_map = {
         "self_attn.o_proj.weight": "attn.c_proj.weight",
         "self_attn.q_proj.weight": "attn.c_attn.weight",
@@ -91,6 +93,7 @@ def convert_hf_checkpoint(
                 from_name = ".".join(name.split(".")[3:])
                 to_name = weight_map[from_name]
 
+                # concat the qkv weights into one single tensor in sigle file
                 if "q_proj" in name:
                     sd[f"transformer.h.{block_id}.{to_name}"][:qkv_size] = permute(param)
                 elif "k_proj" in name:
@@ -108,6 +111,8 @@ def convert_hf_checkpoint(
     print(f"Saving to disk at {output_dir}")
     torch.save(model.state_dict(), output_dir / "lit-llama.pth")
 
+    # verifying the conversion by comparing
+    # the HF model output to the lit-llama model output
     if verify:
         try:
             from transformers import LlamaForCausalLM
