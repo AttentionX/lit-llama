@@ -14,9 +14,12 @@ import lit_llama.model as llama
 from lit_llama.model import build_rope_cache, apply_rope, RMSNorm, MLP
 
 
+# LLaMA-Adapter is more similar to P-Tuning or Prefix-Tuning than to Adapter
 @dataclass
 class LLaMAConfig(llama.LLaMAConfig):
+    # Prompt (learnable hidden state before the input) size
     adapter_prompt_length: int = 10
+    # LLaMA adapter add Prompt to the model starting from this layer to the end
     adapter_start_layer: int = 2
 
 
@@ -67,6 +70,9 @@ class CausalSelfAttention(nn.Module):
                 device=x.device,
             )
 
+        # Use RoPE (Rotary Positional Embedding)
+        # RoPE is a relational Positional Embedding
+        # It add poistional Information on query/key vectors
         q = apply_rope(q, self.rope_cache)
         k = apply_rope(k, self.rope_cache)
 
@@ -79,6 +85,7 @@ class CausalSelfAttention(nn.Module):
         # efficient attention using Flash Attention CUDA kernels
         y = F.scaled_dot_product_attention(q, k, v, attn_mask=None, dropout_p=0.0, is_causal=True)
 
+        # Extra attention over the adapter (Prompt or Prefix)
         if self.block_idx >= self.adapter_start_layer:
             prefix = self.adapter_wte.weight.reshape(1, self.adapter_prompt_length, self.n_embd)
 
@@ -89,6 +96,7 @@ class CausalSelfAttention(nn.Module):
 
             amask = torch.ones(q.shape[-2], ak.shape[-2], dtype=torch.bool, device=x.device)
             ay = F.scaled_dot_product_attention(q, ak, av, attn_mask=amask, dropout_p=0.0, is_causal=False)
+            # gating the adapter's effect by a learnable gating factor
             y = y + self.gating_factor * ay
 
         y = y.transpose(1, 2).contiguous().view(B, T, C)  # re-assemble all head outputs side by side
@@ -103,9 +111,11 @@ class Block(nn.Module):
     """The implementation is identical to `lit_llama.model.Block` with the exception that
     we replace the attention layer where adaption is implemented."""
 
+    # input 'block_idx' is added 
     def __init__(self, config: LLaMAConfig, block_idx: int) -> None:
         super().__init__()
         self.rms_1 = RMSNorm(config.n_embd)
+        # replace the attention layer
         self.attn = CausalSelfAttention(config, block_idx)
         self.rms_2 = RMSNorm(config.n_embd)
         self.mlp = MLP(config)
