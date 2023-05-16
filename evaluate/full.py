@@ -20,6 +20,7 @@ from lit_llama.utils import EmptyInitOnDevice
 from datasets import load_dataset
 
 
+# loads dataset and returns testdata
 def load_eval_data(dataset_name: str) -> str:
     # this mimics gptq datautils
     if dataset_name == "wikitext":
@@ -68,6 +69,7 @@ def main(
             ``"llm.int8"``: LLM.int8() mode,
             ``"gptq.int4"``: GPTQ 4-bit mode.
     """
+    # if file dosen't exist, assert it
     if not checkpoint_path:
         checkpoint_path = Path(f"checkpoints/lit-llama/{model_size}/lit-llama.pth")
     assert checkpoint_path.is_file()
@@ -75,11 +77,13 @@ def main(
 
     fabric = L.Fabric(accelerator=accelerator, devices=1)
 
+    # check whether it has a valid dtype
     dt = getattr(torch, dtype, None)
     if not isinstance(dt, torch.dtype):
         raise ValueError(f"{dtype} is not a valid dtype.")
     dtype = dt
 
+    # load model
     with EmptyInitOnDevice(
         device=fabric.device, dtype=dtype, quantization_mode=quantize
     ):
@@ -100,11 +104,15 @@ def main(
 
     tokenizer = Tokenizer(tokenizer_path)
 
+    # parse dsname and iterate
     for dsname in datasets.split(","):
+        # load evaluation data for the given dataset name (dsname)
         test_string = load_eval_data(dsname)
+        # encode the test string using the tokenizer
         encoded_text = tokenizer.encode(
             test_string, bos=True, eos=False, device=fabric.device
         )
+        # trim the encoded text to match the desired maximum length (=block_size)
         encoded_text = encoded_text[
             None, : 256 * model.config.block_size
         ]  # add batch dimension, trim like gptq implementation
@@ -114,16 +122,21 @@ def main(
         toks = 0
         with torch.inference_mode():
             block_size = 2048  # this is for compat with gptq, and indeed we get much worse beyond this (https://github.com/facebookresearch/llama/blob/57b0eb62de0636e75af471e49e2f1862d908d9d8/llama/model.py#L30)
+            # iterate the encoded_text with block_size
             for i in tqdm.tqdm(range(0, encoded_text.shape[1], block_size)):
                 inp = encoded_text[:, i : i + block_size]
+                # get logits of inp
                 logits = model(inp)[0]
+                # compute the negative log likelihood (nll) using logits and inp
                 nll = torch.nn.functional.cross_entropy(
                     logits[:-1], inp[0, 1:].to(dtype=torch.long), reduction="sum"
                 )
+                # update token count and the sum of the nll
                 toks += inp.size(1) - 1
                 nlls += nll.item()
 
         print(encoded_text.shape, logits.shape)
+        # compute perplexity (ppl) 
         ppl = math.exp(nlls / toks)
         print(f"Perplexity on {dsname}: {ppl:.2f}")
         total_toks += toks
