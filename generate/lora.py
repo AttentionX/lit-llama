@@ -17,6 +17,7 @@ from lit_llama.lora import lora
 from lit_llama.utils import EmptyInitOnDevice, lazy_load, llama_model_lookup
 from scripts.prepare_alpaca import generate_prompt
 
+# set default lora hparameters
 lora_r = 8
 lora_alpha = 16
 lora_dropout = 0.05
@@ -54,6 +55,7 @@ def main(
         temperature: A value controlling the randomness of the sampling process. Higher values result in more random
             samples.
     """
+    # if file doesn't exist, assert it 
     assert lora_path.is_file()
     assert pretrained_path.is_file()
     assert tokenizer_path.is_file()
@@ -63,17 +65,21 @@ def main(
 
     fabric = L.Fabric(devices=1)
 
+    # check whether it has a valid dtype
     dt = getattr(torch, dtype, None)
     if not isinstance(dt, torch.dtype):
         raise ValueError(f"{dtype} is not a valid dtype.")
     dtype = dt
 
+    # load the model
     print("Loading model ...", file=sys.stderr)
+    # measure the duration
     t0 = time.time()
 
     with lazy_load(pretrained_path) as pretrained_checkpoint, lazy_load(lora_path) as lora_checkpoint:
         name = llama_model_lookup(pretrained_checkpoint)
 
+        # initialize the model with lora setups
         with EmptyInitOnDevice(
                 device=fabric.device, dtype=dtype, quantization_mode=quantize
         ), lora(r=lora_r, alpha=lora_alpha, dropout=lora_dropout, enabled=True):
@@ -89,12 +95,16 @@ def main(
     model.eval()
     model = fabric.setup_module(model)
 
+    # get input by encoding the prompt (alpaca style)
     tokenizer = Tokenizer(tokenizer_path)
     sample = {"instruction": prompt, "input": input}
+    # generate_prompt : scripts/prepare_alpaca
     prompt = generate_prompt(sample)
     encoded = tokenizer.encode(prompt, bos=True, eos=False, device=model.device)
 
+    # generate outout from the given prompt
     t0 = time.perf_counter()
+    # generate.py
     output = generate(
         model,
         idx=encoded,

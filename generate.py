@@ -46,22 +46,29 @@ def generate(
     idx = empty
 
     # generate max_new_tokens tokens
+    # generate 1 token per cycle
     for t in range(T, T_new):
         # ignore the not-filled-yet tokens
         idx_cond = idx[:t]
         # if the sequence context is growing too long we must crop it at max_seq_length
+        # crop last max_seq_length tokens of idx_cond 
         idx_cond = idx_cond if t <= max_seq_length else idx_cond[-max_seq_length:]
 
         # forward
         logits = model(idx_cond.view(1, -1))
+        # devide logit values by temperature so that control the level of uncertainty in the model's prediction
         logits = logits[0, -1] / temperature
 
         # optionally crop the logits to only the top k options
         if top_k is not None:
+            # get top-k values of logits
             v, _ = torch.topk(logits, min(top_k, logits.size(-1)))
+            # mask all logits to -inf that are smaller than the min value of top-k logits
             logits[logits < v[[-1]]] = -float("Inf")
 
+        # get probs by applying softmax to logits
         probs = torch.nn.functional.softmax(logits, dim=-1)
+        # get next idx by sampling from probs
         idx_next = torch.multinomial(probs, num_samples=1)
 
         # concatenate the new generation
@@ -100,32 +107,40 @@ def main(
             ``"llm.int8"``: LLM.int8() mode,
             ``"gptq.int4"``: GPTQ 4-bit mode.
     """
+    # if file doesn't exist, assert it 
     assert checkpoint_path.is_file(), checkpoint_path
     assert tokenizer_path.is_file(), tokenizer_path
 
+    # check whether it supports float16 dtype
     fabric = L.Fabric(devices=1)
     dtype = torch.bfloat16 if fabric.device.type == "cuda" and torch.cuda.is_bf16_supported() else torch.float32
 
+    # load the model
     print("Loading model ...", file=sys.stderr)
+    # measure the duration
     t0 = time.time()
     with lazy_load(checkpoint_path) as checkpoint:
         name = llama_model_lookup(checkpoint)
 
+        # initialize the model
         with EmptyInitOnDevice(
                 device=fabric.device, dtype=dtype, quantization_mode=quantize
         ):
             model = LLaMA.from_name(name)
 
+        # load weights from the checkpoint
         model.load_state_dict(checkpoint)
     print(f"Time to load model: {time.time() - t0:.02f} seconds.", file=sys.stderr)
 
     model.eval()
     model = fabric.setup_module(model)
 
+    # get input by encoding the prompt
     tokenizer = Tokenizer(tokenizer_path)
     encoded = tokenizer.encode(prompt, bos=True, eos=False, device=fabric.device)
     prompt_length = encoded.size(0)
 
+    # generate samples from the input
     L.seed_everything(1234)
     for i in range(num_samples):
         t0 = time.perf_counter()

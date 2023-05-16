@@ -48,18 +48,23 @@ def main(
         temperature: A value controlling the randomness of the sampling process. Higher values result in more random
             samples.
     """
+    # if file doesn't exist, assert it 
     assert adapter_path.is_file()
     assert pretrained_path.is_file()
     assert tokenizer_path.is_file()
 
+    # check whether it supports float16 dtype
     fabric = L.Fabric(devices=1)
     dtype = torch.bfloat16 if fabric.device.type == "cuda" and torch.cuda.is_bf16_supported() else torch.float32
 
+    # load the model
     print("Loading model ...", file=sys.stderr)
+    # measure the duration
     t0 = time.time()
     with lazy_load(pretrained_path) as pretrained_checkpoint, lazy_load(adapter_path) as adapter_checkpoint:
         name = llama_model_lookup(pretrained_checkpoint)
 
+        # initialize the model
         with EmptyInitOnDevice(
                 device=fabric.device, dtype=dtype, quantization_mode=quantize
         ):
@@ -75,13 +80,17 @@ def main(
     model.eval()
     model = fabric.setup_module(model)
 
+    # get input by encoding the prompt (alpaca style)
     tokenizer = Tokenizer(tokenizer_path)
     sample = {"instruction": prompt, "input": input}
+    # generate_prompt : scripts/prepare_alpaca
     prompt = generate_prompt(sample)
     encoded = tokenizer.encode(prompt, bos=True, eos=False, device=model.device)
     prompt_length = encoded.size(0)
 
+    # generate outout from the given prompt
     t0 = time.perf_counter()
+    # generate.py
     y = generate(
         model,
         idx=encoded,
