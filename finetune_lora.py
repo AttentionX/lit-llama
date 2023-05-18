@@ -38,9 +38,9 @@ warmup_steps = 100
 
 
 def main(
-    data_dir: str = "data/alpaca", 
-    pretrained_path: str = "checkpoints/lit-llama/7B/lit-llama.pth",
-    out_dir: str = "out/lora/alpaca",
+    data_dir: str = "data/qa_dataset", 
+    pretrained_path: str = "scripts/checkpoints/lit-llama/7B/lit-llama.pth",
+    out_dir: str = "out/lora/gpt-4",
 ):
 
     fabric = L.Fabric(accelerator="cuda", devices=1, precision="bf16-true")
