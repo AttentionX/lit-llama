@@ -29,12 +29,15 @@ class Tokenizer:
         device: Optional[torch.device] = None
     ) -> torch.Tensor:
         tokens = self.processor.encode(string)
+        # add bos and eos token
         if bos:
             tokens = [self.bos_id] + tokens
         if eos:
             tokens = tokens + [self.eos_id]
+        # truncate
         if max_length > 0:
             tokens = tokens[:max_length]
+        # padding
         if pad and len(tokens) < max_length:
             tokens += [self.pad_id] * (max_length - len(tokens))
 
@@ -46,4 +49,6 @@ class Tokenizer:
     @staticmethod
     def train(input: str, destination: str, vocab_size=32000) -> None:
         model_prefix = os.path.join(destination, "tokenizer")
+        # model_type default : unigram
+        # make vocabulary and Tokenizer by Self-supervised Training
         SentencePieceTrainer.Train(input=input, model_prefix=model_prefix, vocab_size=vocab_size)
