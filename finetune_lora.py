@@ -43,7 +43,9 @@ def main(
     out_dir: str = "out/lora/gpt-4",
 ):
 
-    fabric = L.Fabric(accelerator="cuda", devices=1, precision="bf16-true")
+    devices = torch.cuda.device_count()  # Get the number of available GPUs
+    fabric = L.Fabric(accelerator="cuda", devices=devices, precision="bf16-true")
+    # fabric = L.Fabric(accelerator="cuda", devices=1, precision="bf16-true")
     fabric.launch()
     fabric.seed_everything(1337 + fabric.global_rank)
 

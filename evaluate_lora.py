@@ -80,7 +80,9 @@ def main(
     if quantize is not None:
         raise NotImplementedError("Quantization in LoRA is not supported yet")
 
-    fabric = L.Fabric(accelerator=accelerator, devices=1)
+    devices = torch.cuda.device_count()  # Get the number of available GPUs
+    fabric = L.Fabric(accelerator=accelerator, devices=devices)
+    # fabric = L.Fabric(accelerator=accelerator, devices=1)
 
     dt = getattr(torch, dtype, None)
     if not isinstance(dt, torch.dtype):
