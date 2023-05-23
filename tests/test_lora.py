@@ -15,6 +15,7 @@ def test_lora_layer_replacement(lit_llama):
     with lora(r=8, alpha=8, dropout=0.1):
         model = LLaMA(config)
 
+    # check lit_llama_lora has replaced attention layer with LoRA version
     assert isinstance(model.transformer.h[0].attn, LoRACausalSelfAttention)
     assert isinstance(model.transformer.h[1].attn, LoRACausalSelfAttention)
 

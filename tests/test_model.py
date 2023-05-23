@@ -168,6 +168,7 @@ def test_adapter_parity(orig_llama_adapter):
     llama_model.apply(llama_model._init_weights)
     orig_llama_model = orig_llama.Transformer(orig_llama_config)
 
+    # copy weight from original llama-adapter model to lit-llama-adapter model
     copy_weights(llama_model, orig_llama_model)
     copy_adapter_weights(llama_model, orig_llama_model)
 
@@ -193,6 +194,7 @@ def test_model_compile(lit_llama):
     model = lit_llama.LLaMA(llama_config)
     model.apply(model._init_weights)
 
+    # optimize model with torch.compile
     model = torch.compile(model)
 
     sample = torch.randint(model.config.vocab_size, size=(2, model.config.block_size), dtype=torch.int64)
