@@ -17,18 +17,23 @@ lora_r = 8
 lora_alpha = 16
 lora_dropout = 0.05
 
+import paths
+
+NAME = 'GPT-4'
+Prompt = "What is GPT-4?"
+Prompt = "What is the lowest percentage achieved in AP Calculus BC (MCQ)?"
 
 def main(
-    prompt: str = "What food do lamas eat?",
+    prompt: str = Prompt,
     input: str = "",
-    lora_path: Path = Path("out/lora/alpaca/lit-llama-lora-finetuned.pth"),
-    pretrained_path: Path = Path("checkpoints/lit-llama/7B/lit-llama.pth"),
-    tokenizer_path: Path = Path("checkpoints/lit-llama/tokenizer.model"),
+    lora_path: Path = Path(f"out/lora/{NAME}/lit-llama-lora-finetuned.pth"),
+    pretrained_path: Path = Path(paths.LIT_LLAMA_PATH),
+    tokenizer_path: Path = Path(paths.TOKENIZER_PATH),
     quantize: Optional[str] = None,
     dtype: str = "float32",
     max_new_tokens: int = 100,
     top_k: int = 200,
-    temperature: float = 0.8,
+    temperature: float = 0.5,
 ) -> None:
     """Generates a response based on a given instruction and an optional input.
     This script will only work with checkpoints from the instruction-tuned LoRA model.
@@ -67,8 +72,7 @@ def main(
     print("Loading model ...", file=sys.stderr)
     t0 = time.time()
 
-    with (lazy_load(pretrained_path) as pretrained_checkpoint,
-          lazy_load(lora_path) as lora_checkpoint):
+    with lazy_load(pretrained_path) as pretrained_checkpoint, lazy_load(lora_path) as lora_checkpoint:
         name = llama_model_lookup(pretrained_checkpoint)
 
         with EmptyInitOnDevice(

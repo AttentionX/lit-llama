@@ -5,6 +5,7 @@ import sys
 import time
 from pathlib import Path
 from typing import Optional
+import os
 
 import lightning as L
 import torch
@@ -12,15 +13,61 @@ import tqdm
 
 from lit_llama import LLaMA, Tokenizer
 from lit_llama.utils import EmptyInitOnDevice, lazy_load, llama_model_lookup
-from lit_llama.lora import lora
+from lit_llama.lora import mark_only_lora_as_trainable, lora, lora_state_dict
 from scripts.prepare_alpaca import generate_prompt
+from lit_llama.model import LLaMA, LLaMAConfig
 
 from datasets import load_dataset
+
+import paths
+import finetune_lora
 
 lora_r = 8
 lora_alpha = 16
 lora_dropout = 0.05
 
+learning_rate = 3e-4
+
+MODEL = 'GPT-4'
+VAL_DATASET = f'data/qa_dataset/{MODEL}/test.pt'
+LORA_PATH = f'out/lora/{MODEL}/lit-llama-lora-finetuned.pth'
+
+def evaluate(lora_path=LORA_PATH, val_dataset=VAL_DATASET):
+    val_data = torch.load(os.path.join(val_dataset))
+
+    dtype = "float32"
+
+    fabric = L.Fabric(devices=1)
+
+    dt = getattr(torch, dtype, None)
+    if not isinstance(dt, torch.dtype):
+        raise ValueError(f"{dtype} is not a valid dtype.")
+    dtype = dt
+
+    print("Loading model ...", file=sys.stderr)
+    t0 = time.time()
+
+    with lazy_load(paths.LIT_LLAMA_PATH) as pretrained_checkpoint, lazy_load(lora_path) as lora_checkpoint:
+        name = llama_model_lookup(pretrained_checkpoint)
+
+        with EmptyInitOnDevice(
+                device=fabric.device, dtype=dtype, quantization_mode=None
+        ), lora(r=lora_r, alpha=lora_alpha, dropout=lora_dropout, enabled=True):
+            model = LLaMA.from_name(name)
+
+            # 1. Load the pretrained weights
+            model.load_state_dict(pretrained_checkpoint, strict=False)
+            # 2. Load the fine-tuned lora weights
+            model.load_state_dict(lora_checkpoint, strict=False)
+
+    print(f"Time to load model: {time.time() - t0:.02f} seconds.", file=sys.stderr)
+
+    model.eval()
+    model = fabric.setup_module(model)
+
+    val_loss = finetune_lora.validate(fabric, model, val_data)
+    fabric.print(f"val loss {val_loss:.4f}")
+    fabric.barrier()
 
 def load_eval_data(dataset_name: str) -> str:
     # this mimics gptq datautils
@@ -51,9 +98,9 @@ def main(
     # compilation fails as it does not support torch.complex64 for RoPE
     # compile: bool = False,
     accelerator: str = "auto",
-    lora_path: Path = Path("out/lora/alpaca/lit-llama-lora-finetuned.pth"),
-    checkpoint_path: Path = Path("checkpoints/lit-llama/7B/lit-llama.pth"),
-    tokenizer_path: Path = Path("checkpoints/lit-llama/tokenizer.model"),
+    lora_path: Path = Path(f"out/lora/{MODEL}/lit-llama-lora-finetuned.pth"),
+    checkpoint_path: Path = Path(paths.LIT_LLAMA_PATH),
+    tokenizer_path: Path = Path(paths.TOKENIZER_PATH),
     dtype: str = "float32",
     quantize: Optional[str] = None,
 ) -> None:
@@ -81,8 +128,8 @@ def main(
         raise NotImplementedError("Quantization in LoRA is not supported yet")
 
     devices = torch.cuda.device_count()  # Get the number of available GPUs
-    fabric = L.Fabric(accelerator=accelerator, devices=devices)
-    # fabric = L.Fabric(accelerator=accelerator, devices=1)
+    # fabric = L.Fabric(accelerator=accelerator, devices=devices)
+    fabric = L.Fabric(accelerator=accelerator, devices=1)
 
     dt = getattr(torch, dtype, None)
     if not isinstance(dt, torch.dtype):
@@ -166,4 +213,5 @@ if __name__ == "__main__":
     from jsonargparse import CLI
 
     torch.set_float32_matmul_precision("high")
-    CLI(main)
+    # CLI(main)
+    evaluate(lora_path='out/lora/GPT-4/lit-llama-lora-finetuned.pth')

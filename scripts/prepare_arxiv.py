@@ -97,7 +97,7 @@ def prepare_sample(sample, tokenizer, mask_inputs, add_prior_prompt=False, max_s
     if add_prior_prompt is False:
         prior_prompt = ''
     encoded_question = tokenizer.encode(f"{prior_prompt}{question}")
-    encoded_full = tokenizer.encode(f'{prior_prompt}{question}\n{answer}')
+    encoded_full = tokenizer.encode(f'{prior_prompt}{question} {answer}')
     labels = encoded_full.clone()
     if mask_inputs:
         labels[:len(encoded_question)] = IGNORE_INDEX

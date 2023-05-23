@@ -17,6 +17,8 @@ from lit_llama.model import LLaMA, LLaMAConfig
 from lit_llama.tokenizer import Tokenizer
 from scripts.prepare_alpaca import generate_prompt
 
+import paths
+
 
 eval_interval = 100
 save_interval = 100
@@ -28,7 +30,7 @@ learning_rate = 3e-4
 batch_size = 128
 micro_batch_size = 4
 gradient_accumulation_steps = batch_size // micro_batch_size
-max_iters = 50000 * 3 // micro_batch_size
+max_iters = 10000 * 3 // micro_batch_size
 weight_decay = 0.0
 max_seq_length = 256  # see scripts/prepare_alpaca.py
 lora_r = 8
@@ -36,16 +38,18 @@ lora_alpha = 16
 lora_dropout = 0.05
 warmup_steps = 100
 
+NAME = "GPT-4"
 
 def main(
     data_dir: str = "data/qa_dataset", 
     pretrained_path: str = "scripts/checkpoints/lit-llama/7B/lit-llama.pth",
-    out_dir: str = "out/lora/gpt-4",
+    out_dir: str = "out/lora"
 ):
-
+    data_dir = f"{data_dir}/{NAME}"
+    out_dir = f"{out_dir}/{NAME}"
     devices = torch.cuda.device_count()  # Get the number of available GPUs
-    fabric = L.Fabric(accelerator="cuda", devices=devices, precision="bf16-true")
-    # fabric = L.Fabric(accelerator="cuda", devices=1, precision="bf16-true")
+    # fabric = L.Fabric(accelerator="cuda", devices=devices, precision="bf16-true")
+    fabric = L.Fabric(accelerator="cuda", devices=1, precision="bf16-true")
     fabric.launch()
     fabric.seed_everything(1337 + fabric.global_rank)
 
@@ -127,7 +131,7 @@ def train(
 
 
 def generate_response(model, instruction):
-    tokenizer = Tokenizer("/scripts/checkpoints/lit-llama/tokenizer.model")
+    tokenizer = Tokenizer(paths.TOKENIZER_PATH)
     sample = {"instruction": instruction, "input": ""}
     prompt = generate_prompt(sample)
     encoded = tokenizer.encode(prompt, bos=True, eos=False, device=model.device)

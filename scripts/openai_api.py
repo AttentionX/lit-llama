@@ -22,7 +22,6 @@ def chatGPT(chat_history, system='You are a helpful assistant.'):
     
     messages = messages + [{"role":"user", "content":chat_history}]
     
-    response = ''
     i = 0
     while True:
         try:

@@ -9,12 +9,52 @@ from typing import Optional
 import lightning as L
 import torch
 import tqdm
+import os
 
 from lit_llama import LLaMA, Tokenizer
 from lit_llama.utils import EmptyInitOnDevice, llama_model_lookup
 
 from datasets import load_dataset
+import finetune_lora
+import paths
 
+MODEL = 'GPT-4'
+VAL_DATASET = f'data/qa_dataset/{MODEL}/test.pt'
+
+def evaluate(val_dataset=VAL_DATASET):
+    val_data = torch.load(os.path.join(val_dataset))
+
+    dtype = "float32"
+
+    fabric = L.Fabric(accelerator="auto", devices=1)
+
+    dt = getattr(torch, dtype, None)
+    if not isinstance(dt, torch.dtype):
+        raise ValueError(f"{dtype} is not a valid dtype.")
+    dtype = dt
+
+    with EmptyInitOnDevice(
+        device=fabric.device, dtype=dtype, quantization_mode=None
+    ):
+        print("Loading model ...", file=sys.stderr)
+        t0 = time.time()
+        checkpoint = torch.load(paths.LIT_LLAMA_PATH)
+        name = llama_model_lookup(checkpoint)
+        model = LLaMA.from_name(name)
+        model.load_state_dict(checkpoint)
+        print(f"Time to load model: {time.time() - t0:.02f} seconds.", file=sys.stderr)
+
+    model.eval()
+
+    # if compile:
+    #     model = torch.compile(model)
+
+    total_toks = 0
+    model = fabric.setup_module(model)
+
+    val_loss = finetune_lora.validate(fabric, model, val_data)
+    fabric.print(f"val loss {val_loss:.4f}")
+    fabric.barrier()
 
 def load_eval_data(dataset_name: str) -> str:
     # this mimics gptq datautils
@@ -138,4 +178,5 @@ if __name__ == "__main__":
     from jsonargparse import CLI
 
     torch.set_float32_matmul_precision("high")
-    CLI(main)
+    # CLI(main)
+    evaluate()
