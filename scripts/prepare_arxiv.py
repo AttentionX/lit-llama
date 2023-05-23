@@ -35,6 +35,70 @@ urls = [
     'https://arxiv.org/pdf/2303.08774.pdf',
 ]
 
+def prepare_paraphrases(dataset_path):
+    qa_dataset_path = f"{dataset_path}/original_train.jsonl"
+    destination_path = f"{dataset_path}/train.jsonl"
+    test_destination_path = f"{dataset_path}/test.jsonl"
+    jsonl = []
+    test_jsonl = []
+    i = 0
+    with open(qa_dataset_path, 'r') as jsonl_file:
+        for line in jsonl_file:
+            # print(line)
+            if line[-2] != '}' and line[-1] != '}':
+                print('skipping', line)
+                print(f'"{line[-1]}" "{line[-2]}"')
+                continue
+            json_obj = json.loads(line)
+            paraphrased_questions = get_paraphrased_question(json_obj['question'], json_obj['answer'], k=4)
+
+            j = 0
+            for paraphrased_question in paraphrased_questions:
+                json_obj['original_question'] = json_obj['question']
+                json_obj['question'] = paraphrased_question
+                if j == 3:
+                    # Save to test josnl
+                    test_jsonl.append(json_obj)
+                else:
+                    jsonl.append(json_obj)
+                j += 1
+            i += 1
+            print(f'{i}/{len(jsonl_file)}')
+    
+    mode = 'w'
+    if os.path.exists(destination_path):
+        mode = 'a'
+    with open(destination_path, mode) as f:
+        for obj in jsonl:
+            f.write(json.dumps(obj) + '\n')
+
+    mode = 'w'
+    if os.path.exists(test_destination_path):
+        mode = 'a'
+    with open(test_destination_path, mode) as f:
+        for obj in test_jsonl:
+            f.write(json.dumps(obj) + '\n')
+
+def get_paraphrased_questions(question, answer, k=3):
+    instruction = f"""
+    Refer to the example above,
+    Based on the following question, create a paraphrased question that is semantically equivalent to the original question such that when asked the paraphrased question you will generate the same response.
+    Question: {question}
+    Response: {answer}
+    Generate {k} Paraphrased Questions (separated by newlines):\n
+    """
+    examples = """
+    Question: <Question>
+    Response: <Response>
+    Generate 3 Paraphrased Questions:
+    <Question1>
+    <Question2>
+    <Question3>
+    """
+    prompt = f"{examples}\n{instruction}"
+    results = openai_api.chatGPT(prompt)
+    return results.split('\n')
+
 def get_paraphrased_question(question, answer):
     instruction = f"""
     Based on the following question, create a paraphrased question that is semantically equivalent to the original question such that when asked the paraphrased question you will generate the same response.
@@ -187,8 +251,11 @@ def retrieveArxiv(url, option=1):
         prepareQADataset(QA_DATA_PATH / 'GPT-4' / 'test.jsonl', QA_DATASET_PATH / 'GPT-4' / 'test.pt')
 
 if __name__ == '__main__':
-    if TYPE == 3:
-        prepareQADataset(QA_DATA_PATH / 'GPT-4' / 'test.jsonl', QA_DATASET_PATH / 'GPT-4' / 'test.pt')
+    prepare_paraphrases('data/qa_dataset/GPT-4')
+    
+    # prepareQADataset(QA_DATA_PATH / 'GPT-4' / 'test.jsonl', QA_DATASET_PATH / 'GPT-4' / 'test.pt')
+
     # prepare_validation('data/qa/GPT-4/train.jsonl')
+
     # for url in urls:
     #     retrieveArxiv(url, TYPE)

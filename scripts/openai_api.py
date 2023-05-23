@@ -30,10 +30,11 @@ def chatGPT(chat_history, system='You are a helpful assistant.'):
                 messages = messages,
             )
         except Exception as e:
-            print(e)
             if openai.api_key == BACKUP_KEY:
+                print('OpenAI API Switching to Original Key')
                 openai.api_key = os.environ.get('OPENAI_API_KEY')
             else:
+                print('OpenAI API Switching to Backup Key')
                 openai.api_key = BACKUP_KEY
             i += 1
             if i == 2:
