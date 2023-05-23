@@ -10,6 +10,8 @@ import torch
 from lit_llama import LLaMA, Tokenizer
 from lit_llama.utils import EmptyInitOnDevice, lazy_load, llama_model_lookup
 
+LLAMA_PATH = 'scripts/checkpoints/lit-llama/7B/lit-llama.pth'
+TOKENIZER_PATH = 'scripts/checkpoints/lit-llama/tokenizer.model'
 
 @torch.no_grad()
 def generate(
@@ -77,8 +79,8 @@ def main(
     max_new_tokens: int = 50,
     top_k: int = 200,
     temperature: float = 0.8,
-    checkpoint_path: Path = Path("checkpoints/lit-llama/7B/lit-llama.pth"),
-    tokenizer_path: Path = Path("checkpoints/lit-llama/tokenizer.model"),
+    checkpoint_path: Path = Path(LLAMA_PATH),
+    tokenizer_path: Path = Path(TOKENIZER_PATH),
     quantize: Optional[str] = None,
 ) -> None:
     """Generates text samples based on a pre-trained LLaMA model and tokenizer.

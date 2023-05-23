@@ -1,26 +1,28 @@
+import sys
+from pathlib import Path
+
+# support running without installing as a package
+wd = Path(__file__).parent.parent.resolve()
+sys.path.append(str(wd))
+
+from lit_llama.tokenizer import Tokenizer
+
 import requests
 import io
 import PyPDF2
 import numpy as np
 import os
 import json
-import sys
-from pathlib import Path
 from tqdm import tqdm
 import torch
 
 import openai_api
+import paths
 
-# support running without installing as a package
-wd = Path(__file__).parent.parent.resolve()
-sys.path.append(str(wd))
-
-from lit_llama import Tokenizer
-
-TOKENIZER_PATH = '/Users/adamlee/Downloads/AttentionX/models/llama/tokenizer/tokenizer.model'
-TOKENIZED_DATA_PATH = Path('../data/tokenized')
-QA_DATA_PATH = Path('../data/qa')
-QA_DATASET_PATH = Path('../data/qa_dataset')
+TOKENIZER_PATH = paths.TOKENIZER_PATH
+TOKENIZED_DATA_PATH = Path('data/tokenized')
+QA_DATA_PATH = Path('data/qa')
+QA_DATASET_PATH = Path('data/qa_dataset')
 
 # 1: Tokenize
 # 2: QA
@@ -33,6 +35,46 @@ urls = [
     'https://arxiv.org/pdf/2303.08774.pdf',
 ]
 
+def get_paraphrased_question(question, answer):
+    instruction = f"""
+    Based on the following question, create a paraphrased question that is semantically equivalent to the original question such that when asked the paraphrased question you will generate the same response.
+    Question: {question}
+    Response: {answer}
+    Paraphrased Question: 
+    """
+    return openai_api.chatGPT(instruction)
+
+def prepare_validation(qa_dataset_path):
+    destination_path = qa_dataset_path.replace('train', 'test')
+    jsonl = []
+    i = 0
+    with open(qa_dataset_path, 'r') as jsonl_file:
+        for line in jsonl_file:
+            # print(line)
+            if line[-2] != '}' and line[-1] != '}':
+                print('skipping', line)
+                print(f'"{line[-1]}" "{line[-2]}"')
+                continue
+            json_obj = json.loads(line)
+            paraphrased_question = get_paraphrased_question(json_obj['question'], json_obj['answer'])
+            if paraphrased_question is False:
+                continue
+            json_obj['original_question'] = json_obj['question']
+            json_obj['question'] = paraphrased_question
+            jsonl.append(json_obj)
+            i += 1
+            print(f'{i}/{len(jsonl_file)}')
+    mode = 'w'
+    if os.path.exists(destination_path):
+        mode = 'a'
+    with open(destination_path, mode) as f:
+        for obj in jsonl:
+            # if obj[-1] != '}':
+            #     continue
+            # data = json.loads(obj)
+            f.write(json.dumps(obj) + '\n')
+            
+
 # Prepare a dataset with the qa jsonl file
 def prepareQADataset(file_path, destination_path:Path, max_seq_length: int = 256, mask_inputs_for_label: bool = True, add_prior_prompt=False):
     tokenizer = Tokenizer(TOKENIZER_PATH)
@@ -44,7 +86,7 @@ def prepareQADataset(file_path, destination_path:Path, max_seq_length: int = 256
             json_object = json.loads(line)
             data.append(json_object)
     dataset = [prepare_sample(sample, tokenizer, max_seq_length, mask_inputs_for_label, add_prior_prompt) for sample in tqdm(data)]
-    torch.save(dataset, destination_path / "qa.pt")
+    torch.save(dataset, destination_path)
 
 def prepare_sample(sample, tokenizer, mask_inputs, add_prior_prompt=False, max_seq_length=256):
     prior_prompt = """
@@ -142,8 +184,11 @@ def retrieveArxiv(url, option=1):
     elif option == 2:
         prepareQA(text, QA_DATA_PATH, title)
     elif option == 3:
-        prepareQADataset(QA_DATA_PATH / 'GPT-4 Technical Report.jsonl', QA_DATASET_PATH)
+        prepareQADataset(QA_DATA_PATH / 'GPT-4' / 'test.jsonl', QA_DATASET_PATH / 'GPT-4' / 'test.pt')
 
 if __name__ == '__main__':
-    for url in urls:
-        retrieveArxiv(url, TYPE)
+    if TYPE == 3:
+        prepareQADataset(QA_DATA_PATH / 'GPT-4' / 'test.jsonl', QA_DATASET_PATH / 'GPT-4' / 'test.pt')
+    # prepare_validation('data/qa/GPT-4/train.jsonl')
+    # for url in urls:
+    #     retrieveArxiv(url, TYPE)
