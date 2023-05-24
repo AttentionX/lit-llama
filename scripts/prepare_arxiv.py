@@ -50,7 +50,8 @@ def prepare_paraphrases(dataset_path):
                 print(f'"{line[-1]}" "{line[-2]}"')
                 continue
             json_obj = json.loads(line)
-            paraphrased_questions = get_paraphrased_question(json_obj['question'], json_obj['answer'], k=4)
+            paraphrased_questions = get_paraphrased_questions(json_obj['question'], json_obj['answer'], k=4)
+            # print(paraphrased_questions)
 
             j = 0
             for paraphrased_question in paraphrased_questions:
@@ -60,6 +61,7 @@ def prepare_paraphrases(dataset_path):
                     # Save to test josnl
                     test_jsonl.append(json_obj)
                 else:
+                    # Save to train jsonl
                     jsonl.append(json_obj)
                 j += 1
             i += 1
@@ -91,13 +93,16 @@ def get_paraphrased_questions(question, answer, k=3):
     Question: <Question>
     Response: <Response>
     Generate 3 Paraphrased Questions:
-    <Question1>
-    <Question2>
-    <Question3>
+    1. <Question1>
+    2. <Question2>
+    3. <Question3>
     """
     prompt = f"{examples}\n{instruction}"
     results = openai_api.chatGPT(prompt)
-    return results.split('\n')
+
+    # print(results)
+
+    return [result[3:].strip() for result in results.split('\n')]
 
 def get_paraphrased_question(question, answer):
     instruction = f"""
@@ -251,7 +256,7 @@ def retrieveArxiv(url, option=1):
         prepareQADataset(QA_DATA_PATH / 'GPT-4' / 'test.jsonl', QA_DATASET_PATH / 'GPT-4' / 'test.pt')
 
 if __name__ == '__main__':
-    prepare_paraphrases('data/qa_dataset/GPT-4')
+    prepare_paraphrases('data/qa/GPT-4')
     
     # prepareQADataset(QA_DATA_PATH / 'GPT-4' / 'test.jsonl', QA_DATASET_PATH / 'GPT-4' / 'test.pt')
 
