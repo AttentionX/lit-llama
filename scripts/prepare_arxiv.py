@@ -41,6 +41,11 @@ def prepare_paraphrases(dataset_path):
     test_destination_path = f"{dataset_path}/test.jsonl"
     jsonl = []
     test_jsonl = []
+    k = 4
+
+    with open(qa_dataset_path, 'r') as jsonl_file:
+        total_lines = sum(1 for line in jsonl_file)
+    
     i = 0
     with open(qa_dataset_path, 'r') as jsonl_file:
         for line in jsonl_file:
@@ -50,14 +55,14 @@ def prepare_paraphrases(dataset_path):
                 print(f'"{line[-1]}" "{line[-2]}"')
                 continue
             json_obj = json.loads(line)
-            paraphrased_questions = get_paraphrased_questions(json_obj['question'], json_obj['answer'], k=4)
+            paraphrased_questions = get_paraphrased_questions(json_obj['question'], json_obj['answer'], k=k)
             # print(paraphrased_questions)
 
             j = 0
             for paraphrased_question in paraphrased_questions:
                 json_obj['original_question'] = json_obj['question']
                 json_obj['question'] = paraphrased_question
-                if j == 3:
+                if j == k-1:
                     # Save to test josnl
                     test_jsonl.append(json_obj)
                 else:
@@ -65,8 +70,9 @@ def prepare_paraphrases(dataset_path):
                     jsonl.append(json_obj)
                 j += 1
             i += 1
-            print(f'{i}/{len(jsonl_file)}')
+            print(f'{i}/{total_lines}')
     
+    print('Saving train jsonl')
     mode = 'w'
     if os.path.exists(destination_path):
         mode = 'a'
@@ -74,6 +80,7 @@ def prepare_paraphrases(dataset_path):
         for obj in jsonl:
             f.write(json.dumps(obj) + '\n')
 
+    print('Saving test jsonl')
     mode = 'w'
     if os.path.exists(test_destination_path):
         mode = 'a'
@@ -132,7 +139,7 @@ def prepare_validation(qa_dataset_path):
             json_obj['question'] = paraphrased_question
             jsonl.append(json_obj)
             i += 1
-            print(f'{i}/{len(jsonl_file)}')
+            print(f'{i}')
     mode = 'w'
     if os.path.exists(destination_path):
         mode = 'a'

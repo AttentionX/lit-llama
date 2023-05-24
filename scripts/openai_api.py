@@ -9,6 +9,15 @@ load_dotenv()
 openai.api_key = os.environ.get('OPENAI_API_KEY')
 BACKUP_KEY = os.environ.get('OPENAI_API_KEY2')
 
+NUM_KEYS = 2
+KEYS = []
+
+for i in range(NUM_KEYS):
+    if i == 0:
+        KEYS.append(os.environ.get('OPENAI_API_KEY'))
+    else:
+        KEYS.append(os.environ.get(f'OPENAI_API_KEY{i+1}'))
+
 
 def embedding(text):
     text = text.replace("\n", " ")
