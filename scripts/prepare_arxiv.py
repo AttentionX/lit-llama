@@ -91,7 +91,7 @@ def prepare_paraphrases(dataset_path):
 def get_paraphrased_questions(question, answer, k=3):
     instruction = f"""
     Refer to the example above,
-    Based on the following question, create a paraphrased question that is semantically equivalent to the original question such that when asked the paraphrased question you will generate the same response.
+    Based on the following question, create {k} distinct paraphrased questions, which are different from each other, that are semantically equivalent to the original question such that when asked any of the unique paraphrased questions you will generate the same response.
     Question: {question}
     Response: {answer}
     Generate {k} Paraphrased Questions (separated by newlines):\n
@@ -107,7 +107,7 @@ def get_paraphrased_questions(question, answer, k=3):
     prompt = f"{examples}\n{instruction}"
     results = openai_api.chatGPT(prompt)
 
-    # print(results)
+    print(results)
 
     return [result[3:].strip() for result in results.split('\n')]
 
