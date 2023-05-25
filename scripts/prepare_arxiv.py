@@ -15,6 +15,7 @@ import os
 import json
 from tqdm import tqdm
 import torch
+import copy
 
 import openai_api
 import paths
@@ -60,14 +61,16 @@ def prepare_paraphrases(dataset_path):
 
             j = 0
             for paraphrased_question in paraphrased_questions:
-                json_obj['original_question'] = json_obj['question']
-                json_obj['question'] = paraphrased_question
+                new_json_obj = copy.deepcopy(json_obj)
+                new_json_obj['original_question'] = new_json_obj['question']
+                new_json_obj['question'] = paraphrased_question
+                print('Question:', new_json_obj['question'])
                 if j == k-1:
                     # Save to test josnl
-                    test_jsonl.append(json_obj)
+                    test_jsonl.append(new_json_obj)
                 else:
                     # Save to train jsonl
-                    jsonl.append(json_obj)
+                    jsonl.append(new_json_obj)
                 j += 1
             i += 1
             print(f'{i}/{total_lines}')
@@ -165,9 +168,7 @@ def prepareQADataset(file_path, destination_path:Path, max_seq_length: int = 256
     torch.save(dataset, destination_path)
 
 def prepare_sample(sample, tokenizer, mask_inputs, add_prior_prompt=False, max_seq_length=256):
-    prior_prompt = """
-    Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.\n\n
-    """
+    prior_prompt = """Write a response that appropriately completes the question."""
     question = sample['question']
     answer = sample['answer']
     if add_prior_prompt is False:

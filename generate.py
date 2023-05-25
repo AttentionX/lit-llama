@@ -13,8 +13,7 @@ from lit_llama.utils import EmptyInitOnDevice, lazy_load, llama_model_lookup
 LLAMA_PATH = 'scripts/checkpoints/lit-llama/7B/lit-llama.pth'
 TOKENIZER_PATH = 'scripts/checkpoints/lit-llama/tokenizer.model'
 
-Prompt = "What is GPT-4?"
-Prompt = "What is the minimum percentage obtained in the multiple-choice section of AP Calculus BC"
+Prompt = "Q: Explain the paper: An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale A:"
 
 @torch.no_grad()
 def generate(
@@ -79,7 +78,7 @@ def main(
     prompt: str = Prompt,
     *,
     num_samples: int = 1,
-    max_new_tokens: int = 50,
+    max_new_tokens: int = 100,
     top_k: int = 200,
     temperature: float = 0.8,
     checkpoint_path: Path = Path(LLAMA_PATH),

@@ -11,6 +11,7 @@ BACKUP_KEY = os.environ.get('OPENAI_API_KEY2')
 
 NUM_KEYS = 2
 KEYS = []
+CURR_KEY = 0
 
 for i in range(NUM_KEYS):
     if i == 0:
@@ -18,12 +19,15 @@ for i in range(NUM_KEYS):
     else:
         KEYS.append(os.environ.get(f'OPENAI_API_KEY{i+1}'))
 
+# print(len(KEYS))
+
 
 def embedding(text):
     text = text.replace("\n", " ")
     return openai.Embedding.create(input = [text], model="text-embedding-ada-002")['data'][0]['embedding']
     
 def chatGPT(chat_history, system='You are a helpful assistant.'):
+    global CURR_KEY
     engine = "gpt-3.5-turbo"
     messages = [
         {"role": "system", "content": system},
@@ -39,14 +43,18 @@ def chatGPT(chat_history, system='You are a helpful assistant.'):
                 messages = messages,
             )
         except Exception as e:
-            if openai.api_key == BACKUP_KEY:
-                print('OpenAI API Switching to Original Key')
-                openai.api_key = os.environ.get('OPENAI_API_KEY')
-            else:
-                print('OpenAI API Switching to Backup Key')
-                openai.api_key = BACKUP_KEY
+            NEW_KEY = (CURR_KEY + 1) % NUM_KEYS
+            print(f'Switching to api key {NEW_KEY}')
+            openai.api_key = KEYS[NEW_KEY]
+            CURR_KEY = NEW_KEY
+            # if openai.api_key == BACKUP_KEY:
+            #     print('OpenAI API Switching to Original Key')
+            #     openai.api_key = os.environ.get('OPENAI_API_KEY')
+            # else:
+            #     print('OpenAI API Switching to Backup Key')
+            #     openai.api_key = BACKUP_KEY
             i += 1
-            if i == 2:
+            if i == NUM_KEYS:
                 raise Exception(e)
         else:
             break
