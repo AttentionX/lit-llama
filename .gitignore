@@ -6,7 +6,7 @@ build
 
 # data
 checkpoints
-# out
+out
 !data/shakespeare/prepare.py
 wandb
 
