@@ -185,7 +185,10 @@ def prepare_sample(sample, tokenizer, mask_inputs, add_prior_prompt=False, max_s
     
 
 # Prepare dataset in q&a format
-def prepareQA(text, destination_path:Path, title, date=None, chunk_size=8000):
+def prepareQA(text, destination_path:Path, title, date=None, chunk_size=8000, skip_if_exists=True):
+    if os.path.exists(destination_path / f'{title}.jsonl') and skip_if_exists:
+        return
+
     qa_examples = """
     {"question": "When did Virgin Australia start operating?", "answer": "Virgin Australia commenced services on 31 August 2000 as Virgin Blue, with two aircraft on a single route."}
     {"question": "When was Tomoaki Komorida born?", "answer": "Tomoaki Komorida was born on July 10,1981."}
