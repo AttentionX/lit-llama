@@ -10,3 +10,4 @@ zstandard  # prepare_redpajama.py
 PyPDF2
 openai
 python-dotenv
+wandb
