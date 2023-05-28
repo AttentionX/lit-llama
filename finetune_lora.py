@@ -17,6 +17,9 @@ from lit_llama.model import LLaMA, LLaMAConfig
 from lit_llama.tokenizer import Tokenizer
 from scripts.prepare_alpaca import generate_prompt
 
+import wandb
+from pytorch_lightning.loggers import WandbLogger
+
 import paths
 
 
@@ -38,6 +41,13 @@ lora_alpha = 16
 lora_dropout = 0.05
 warmup_steps = 100
 
+config = {
+    "learning_rate":learning_rate,
+    "iters":max_iters,
+    "batch_size":batch_size,
+    "weight_decay":weight_decay,
+}
+
 NAME = "GPT-4"
 
 def main(
@@ -48,8 +58,15 @@ def main(
     data_dir = f"{data_dir}/{NAME}"
     out_dir = f"{out_dir}/{NAME}"
     devices = torch.cuda.device_count()  # Get the number of available GPUs
+    
+    wandb.init(
+        # set the wandb project where this run will be logged
+        project="lit-llama",
+        config=config,
+    )
+    wandb_logger = WandbLogger(name="peft", project="lit-llama")
     # fabric = L.Fabric(accelerator="cuda", devices=devices, precision="bf16-true")
-    fabric = L.Fabric(accelerator="cuda", devices=1, precision="bf16-true")
+    fabric = L.Fabric(accelerator="cuda", devices=1, precision="bf16-true", logger=wandb_logger)
     fabric.launch()
     fabric.seed_everything(1337 + fabric.global_rank)
 
@@ -77,6 +94,7 @@ def main(
     # Save the final LoRA checkpoint at the end of training
     checkpoint = lora_state_dict(model)
     fabric.save(os.path.join(out_dir, "lit-llama-lora-finetuned.pth"), checkpoint)
+    wandb.finish()
 
 
 def train(
@@ -116,6 +134,7 @@ def train(
             if step_count % eval_interval == 0:
                 val_loss = validate(fabric, model, val_data)
                 fabric.print(f"step {iter_num}: val loss {val_loss:.4f}")
+                wandb.log({"Validation loss": val_loss})
                 fabric.barrier()
 
             if step_count % save_interval == 0:
@@ -128,6 +147,7 @@ def train(
         dt = time.time() - t0
         if iter_num % log_interval == 0:
             fabric.print(f"iter {iter_num}: loss {loss.item():.4f}, time: {dt*1000:.2f}ms")
+            wandb.log({"Loss": loss.item()})
 
 
 def generate_response(model, instruction):
