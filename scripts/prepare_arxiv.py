@@ -185,21 +185,23 @@ def prepare_sample(sample, tokenizer, mask_inputs, add_prior_prompt=False, max_s
     
 
 # Prepare dataset in q&a format
-def prepareQA(text, destination_path:Path, title, date=None, chunk_size=8000, skip_if_exists=True):
+def prepareQA(text, destination_path:Path, title, date=None, chunk_size=7000, skip_if_exists=True):
     if os.path.exists(destination_path / f'{title}.jsonl') and skip_if_exists:
         return
 
     qa_examples = """
     {"question": "When did Virgin Australia start operating?", "answer": "Virgin Australia commenced services on 31 August 2000 as Virgin Blue, with two aircraft on a single route."}
     {"question": "When was Tomoaki Komorida born?", "answer": "Tomoaki Komorida was born on July 10,1981."}
-    {"question": "Regarding Lollapalooza, where does it take place, who started it and what is it?", "answer": "Lollapalooze is an annual musical festival held in Grant Park in Chicago, Illinois. It was started in 1991 as a farewell tour by Perry Farrell, singe of the group Jane's Addiction. The festival includes an array of musical genres including alternative rock, heavy metal, punk rock, hip hop, and electronic dance music. The festivals welcomes an estimated 400,000 people each year and sells out annually. Some notable headliners include: the Red Hot Chili Peppers, Chance the Rapper, Metallica, and Lady Gage. Lollapalooza is one of the largest and most iconic festivals in the world and a staple of Chicago."}
     {"question": "Who was Kyle Van Zyl playing against when he scored 36 of hisa teams 61 points?", "answer": "Kyle Van Zyl was playing against Boland U21 when he scored 36 points, leading his team to victory in a 61-3 win."}
     """
     instruction = """
-    Given the following information, create as many question-answer pairs as possible about the information, covering all of the core topics/subjects in jsonl format (Each line containing a json object). The question should be phrased such that you would be able to answer it if asked. 
+    Given the following information, create as many question-answer pairs as possible about the information, covering all of the core topics/subjects in jsonl format (Each line containing a json object). The questions should be phrased such that you would be able to answer it if asked and should contain enough context. 
     """
     i = 0
     jsonl = []
+
+    # Switch chunks to be paragraphs that overlap
+
     while i * chunk_size < len(text):
         print(f'Processing chunk {i+1} in {title} dataset of length {math.ceil(len(text)/chunk_size)}')
         end_index = (i+1)*chunk_size if (i+1)*chunk_size < len(text) else len(text)
