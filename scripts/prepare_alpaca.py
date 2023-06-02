@@ -61,11 +61,11 @@ def prepare(
 
     print("Processing train split ...")
     train_set = [prepare_sample(sample, tokenizer, max_seq_length, mask_inputs) for sample in tqdm(train_set)]
-    torch.save(train_set, file_path.parent / "alpaca_train.pt")
+    torch.save(train_set, file_path.parent / "train.pt")
 
     print("Processing test split ...")
     test_set = [prepare_sample(sample, tokenizer, max_seq_length, mask_inputs) for sample in tqdm(test_set)]
-    torch.save(test_set, file_path.parent / "alpaca_test.pt")
+    torch.save(test_set, file_path.parent / "test.pt")
 
 
 def download(file_path: Path):
