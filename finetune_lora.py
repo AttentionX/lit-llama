@@ -22,6 +22,8 @@ from pytorch_lightning.loggers import WandbLogger
 
 import paths
 
+LIT_LLAMA_PATH = paths.LIT_LLAMA_PATH
+TOKENIZER_PATH = paths.TOKENIZER_PATH
 
 eval_interval = 100
 save_interval = 100
@@ -33,7 +35,7 @@ learning_rate = 3e-4
 batch_size = 128
 micro_batch_size = 4
 gradient_accumulation_steps = batch_size // micro_batch_size
-max_iters = 10000 * 3 // micro_batch_size
+max_iters = 20000 * 3 // micro_batch_size
 weight_decay = 0.0
 max_seq_length = 256  # see scripts/prepare_alpaca.py
 lora_r = 8
@@ -41,32 +43,40 @@ lora_alpha = 16
 lora_dropout = 0.05
 warmup_steps = 100
 
-config = {
+wandb_config = {
     "learning_rate":learning_rate,
     "iters":max_iters,
     "batch_size":batch_size,
     "weight_decay":weight_decay,
 }
 
-NAME = "GPT-4"
+NAME = "Alpaca"
+ALPACA_PATH = 'data/alpaca'
+
+# 0 Custom
+# 1 Alpaca
+TRAIN_TYPE = 1
 
 def main(
     data_dir: str = "data/qa_dataset", 
-    pretrained_path: str = "scripts/checkpoints/lit-llama/7B/lit-llama.pth",
+    pretrained_path: str = LIT_LLAMA_PATH,
     out_dir: str = "out/lora"
-):
-    data_dir = f"{data_dir}/{NAME}"
+):  
+    if TRAIN_TYPE == 0:
+        data_dir = f"{data_dir}/{NAME}"
+    elif TRAIN_TYPE == 1:
+        data_dir = ALPACA_PATH
     out_dir = f"{out_dir}/{NAME}"
     devices = torch.cuda.device_count()  # Get the number of available GPUs
     
     wandb.init(
         # set the wandb project where this run will be logged
         project="lit-llama",
-        config=config,
+        config=wandb_config,
     )
-    wandb_logger = WandbLogger(name="peft", project="lit-llama")
+    wandb_logger = WandbLogger(name="peft", project=f"lit-llama_{NAME}")
     # fabric = L.Fabric(accelerator="cuda", devices=devices, precision="bf16-true")
-    fabric = L.Fabric(accelerator="cuda", devices=1, precision="bf16-true", logger=wandb_logger)
+    fabric = L.Fabric(accelerator="cuda", devices=1, precision="bf16-true", loggers=wandb_logger)
     fabric.launch()
     fabric.seed_everything(1337 + fabric.global_rank)
 

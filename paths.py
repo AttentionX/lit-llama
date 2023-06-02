@@ -1,2 +1,2 @@
-LIT_LLAMA_PATH = 'scripts/checkpoints/lit-llama/7B/lit-llama.pth'
-TOKENIZER_PATH = 'scripts/checkpoints/lit-llama/tokenizer.model'
+LIT_LLAMA_PATH = '/root/models/llama/lit-llama/7B.pth'
+TOKENIZER_PATH = '/root/models/llama/tokenizer/tokenizer.model'
