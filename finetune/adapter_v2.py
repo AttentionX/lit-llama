@@ -22,6 +22,9 @@ import numpy as np
 import torch
 import torch.nn as nn
 
+import wandb
+from pytorch_lightning.loggers import WandbLogger
+
 # support running without installing as a package
 wd = Path(__file__).parent.parent.resolve()
 sys.path.append(str(wd))
@@ -36,6 +39,7 @@ from lit_llama.adapter_v2 import (
 from lit_llama.tokenizer import Tokenizer
 from scripts.prepare_alpaca import generate_prompt
 from lightning.fabric.strategies import DeepSpeedStrategy
+from paths import LIT_LLAMA_PATH, TOKENIZER_PATH
 
 
 eval_interval = 600
@@ -63,18 +67,39 @@ ds_config = {
     "zero_optimization": {"stage": 2},
 }
 
+RUN_NUM = 1
+
+wandb_config = {
+    "learning_rate":learning_rate,
+    "iters":max_iters,
+    "batch_size":batch_size,
+    "weight_decay":weight_decay,
+    "Run": RUN_NUM,
+    "warmup_iters": warmup_iters,
+}
+
 
 def main(
     data_dir: str = "data/alpaca", 
-    pretrained_path: str = "checkpoints/lit-llama/7B/lit-llama.pth",
+    pretrained_path: str = LIT_LLAMA_PATH,
     out_dir: str = "out/adapter_v2/alpaca",
+    tokenizer_path: str = TOKENIZER_PATH,
 ):
+    project_name = "lit-llama_Alpaca_adapter_v2"
+
+    wandb.init(
+        # set the wandb project where this run will be logged
+        project=project_name,
+        config=wandb_config,
+    )
+    wandb_logger = WandbLogger(name=f"Run {RUN_NUM}", project=project_name)
 
     fabric = L.Fabric(
         accelerator="cuda",
         devices=1,
         strategy=(DeepSpeedStrategy(config=ds_config) if devices > 1 else "auto"),
         precision="bf16-true",
+        loggers=wandb_logger,
     )
     fabric.launch()
     fabric.seed_everything(1337 + fabric.global_rank)
@@ -110,6 +135,7 @@ def main(
 
     # Save the final checkpoint at the end of training
     save_model_checkpoint(fabric, model, os.path.join(out_dir, "lit-llama-adapter-finetuned.pth"))
+    wandb.finish()
 
 
 def train(
@@ -150,6 +176,7 @@ def train(
             if step_count % eval_interval == 0:
                 val_loss = validate(fabric, model, val_data)
                 fabric.print(f"step {iter_num}: val loss {val_loss:.4f}")
+                wandb.log({"Validation loss": val_loss})
                 fabric.barrier()
 
             if step_count % save_interval == 0:
@@ -160,10 +187,11 @@ def train(
         dt = time.time() - t0
         if iter_num % log_interval == 0:
             fabric.print(f"iter {iter_num}: loss {loss.item():.4f}, time: {dt*1000:.2f}ms")
+            wandb.log({"Loss": loss.item()})
 
 
 def generate_response(model, instruction, input=""):
-    tokenizer = Tokenizer("checkpoints/lit-llama/tokenizer.model")
+    tokenizer = Tokenizer(TOKENIZER_PATH)
     sample = {"instruction": instruction, "input": input}
     prompt = generate_prompt(sample)
     encoded = tokenizer.encode(prompt, bos=True, eos=False, device=model.device)
