@@ -2,7 +2,9 @@ __pycache__
 .idea
 .DS_Store
 *.egg-info
-build
+build\
+.env
+.hypothesis
 
 # data
 data
