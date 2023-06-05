@@ -71,10 +71,10 @@ def main(
 ):
     wandb.init(
         # set the wandb project where this run will be logged
-        project="lit-llama",
+        project="lit-llama_Alpaca_LoRA",
         config=wandb_config,
     )
-    wandb_logger = WandbLogger(name="peft", project=f"lit-llama_Alpaca")
+    wandb_logger = WandbLogger(name=f"Run {RUN_NUM}", project=f"lit-llama_Alpaca_LoRA")
 
     fabric = L.Fabric(accelerator="cuda", devices=1, precision="bf16-true", loggers=wandb_logger)
     fabric.launch()
