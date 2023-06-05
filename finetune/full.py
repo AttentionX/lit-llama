@@ -69,6 +69,8 @@ def main(
     tokenizer_path: str = TOKENIZER_PATH,
     
 ):
+    print(max_iters)
+
     project_name = "lit-llama_Alpaca_full"
 
     wandb.init(

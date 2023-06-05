@@ -85,6 +85,8 @@ def main(
     out_dir: str = "out/adapter_v2/alpaca",
     tokenizer_path: str = TOKENIZER_PATH,
 ):
+    print(max_iters)
+
     project_name = "lit-llama_Alpaca_adapter_v2"
 
     wandb.init(
