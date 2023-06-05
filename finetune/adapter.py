@@ -71,6 +71,7 @@ wandb_config = {
     "weight_decay":weight_decay,
     "Run": RUN_NUM,
     "warmup_iters": warmup_iters,
+    "gradient_accumulation_iters": gradient_accumulation_iters,
 }
 
 

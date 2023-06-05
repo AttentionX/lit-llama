@@ -60,6 +60,7 @@ wandb_config = {
     "lora_alpha": lora_alpha,
     "lora_dropout": lora_dropout,
     "warmup_iters": warmup_iters,
+    "gradient_accumulation_iters": gradient_accumulation_iters,
 }
 
 
