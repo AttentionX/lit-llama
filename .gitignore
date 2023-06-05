@@ -6,7 +6,6 @@ build
 .env
 .hypothesis
 
-# data
 data
 checkpoints
 out
