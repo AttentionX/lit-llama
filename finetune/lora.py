@@ -27,7 +27,6 @@ from lit_llama.tokenizer import Tokenizer
 from scripts.prepare_alpaca import generate_prompt
 from paths import LIT_LLAMA_PATH, TOKENIZER_PATH
 
-
 instruction_tuning = True
 eval_interval = 100
 save_interval = 100
