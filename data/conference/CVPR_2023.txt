@@ -1,0 +1,164 @@
+title,published,modified,pdfUrl,conference
+Frequency-Modulated Point Cloud Rendering with Easy Editing,"13 March, 2023","18 March, 2023",https://arxiv.org/pdf/2303.07596,CVPR 2023
+Magic3D: High-Resolution Text-to-3D Content Creation,"18 November, 2022","25 March, 2023",https://arxiv.org/pdf/2211.10440,CVPR 2023
+ECON: Explicit Clothed humans Optimized via Normal integration,"14 December, 2022","23 March, 2023",https://arxiv.org/pdf/2212.07422,CVPR 2023
+PLIKS: A Pseudo-Linear Inverse Kinematic Solver for 3D Human Body Estimation,"21 November, 2022","27 March, 2023",https://arxiv.org/pdf/2211.11734,CVPR 2023
+Progressive Transformation Learning for Leveraging Virtual Images in Training,"3 November, 2022","27 March, 2023",https://arxiv.org/pdf/2211.01778,CVPR 2023
+Understanding and Improving Features Learned in Deep Functional Maps,"29 March, 2023","29 March, 2023",https://arxiv.org/pdf/2303.16527,CVPR 2023
+Neural Volumetric Memory for Visual Locomotion Control,"3 April, 2023","3 April, 2023",https://arxiv.org/pdf/2304.01201,CVPR 2023
+SIEDOB: Semantic Image Editing by Disentangling Object and Background,"23 March, 2023","23 March, 2023",https://arxiv.org/pdf/2303.13062,CVPR 2023
+MaskSketch: Unpaired Structure-guided Masked Image Generation,"10 February, 2023","10 February, 2023",https://arxiv.org/pdf/2302.05496,CVPR 2023
+Polynomial Implicit Neural Representations For Large Diverse Datasets,"20 March, 2023","20 March, 2023",https://arxiv.org/pdf/2303.11424,CVPR 2023
+Top-Down Visual Attention from Analysis by Synthesis,"23 March, 2023","23 March, 2023",https://arxiv.org/pdf/2303.13043,CVPR 2023
+Masked Image Modeling with Local Multi-Scale Reconstruction,"9 March, 2023","9 March, 2023",https://arxiv.org/pdf/2303.05251,CVPR 2023
+Egocentric Video Task Translation,"12 December, 2022","6 April, 2023",https://arxiv.org/pdf/2212.06301,CVPR 2023
+QPGesture: Quantization-Based and Phase-Guided Motion Matching for Natural Speech-Driven Gesture Generation,"18 May, 2023","18 May, 2023",https://arxiv.org/pdf/2305.11094,CVPR 2023
+Actionlet-Dependent Contrastive Learning for Unsupervised Skeleton-Based Action Recognition,"20 March, 2023","21 March, 2023",https://arxiv.org/pdf/2303.10904,CVPR 2023
+Connecting Vision and Language with Video Localized Narratives,"22 February, 2023","15 March, 2023",https://arxiv.org/pdf/2302.11217,CVPR 2023
+Video-Text as Game Players: Hierarchical Banzhaf Interaction for Cross-Modal Representation Learning,"25 March, 2023","25 March, 2023",https://arxiv.org/pdf/2303.14369,CVPR 2023
+Improving Commonsense in Vision-Language Models via Knowledge Graph Riddles,"29 November, 2022","29 November, 2022",https://arxiv.org/pdf/2211.16504,CVPR 2023
+FAME-ViL: Multi-Tasking Vision-Language Model for Heterogeneous Fashion Tasks,"4 March, 2023","4 March, 2023",https://arxiv.org/pdf/2303.02483,CVPR 2023
+Uni-Perceiver v2: A Generalist Model for Large-Scale Vision and Vision-Language Tasks,"17 November, 2022","17 November, 2022",https://arxiv.org/pdf/2211.09808,CVPR 2023
+Side Adapter Network for Open-Vocabulary Semantic Segmentation,"23 February, 2023","22 March, 2023",https://arxiv.org/pdf/2302.12242,CVPR 2023
+Open-Vocabulary Panoptic Segmentation with Text-to-Image Diffusion Models,"8 March, 2023","5 April, 2023",https://arxiv.org/pdf/2303.04803,CVPR 2023
+Consistent-Teacher: Towards Reducing Inconsistent Pseudo-targets in Semi-supervised Object Detection,"4 September, 2022","28 March, 2023",https://arxiv.org/pdf/2209.01589,CVPR 2023
+RepMode: Learning to Re-parameterize Diverse Experts for Subcellular Structure Prediction,"20 December, 2022","25 March, 2023",https://arxiv.org/pdf/2212.10066,CVPR 2023
+Patch-Mix Transformer for Unsupervised Domain Adaptation: A Game Perspective,"23 March, 2023","23 March, 2023",https://arxiv.org/pdf/2303.13434,CVPR 2023
+GradMA: A Gradient-Memory-based Accelerated Federated Learning with Alleviated Catastrophic Forgetting,"27 February, 2023","15 March, 2023",https://arxiv.org/pdf/2302.14307,CVPR 2023
+SplineCam: Exact Visualization and Characterization of Deep Network Geometry and Decision Boundaries,"24 February, 2023","24 February, 2023",https://arxiv.org/pdf/2302.12828,CVPR 2023
+Q-DETR: An Efficient Low-Bit Quantized Detection Transformer,"1 April, 2023","1 April, 2023",https://arxiv.org/pdf/2304.00253,CVPR 2023
+Towards Effective Adversarial Textured 3D Meshes on Physical Face Recognition,"28 March, 2023","28 March, 2023",https://arxiv.org/pdf/2303.15818,CVPR 2023
+Passive Micron-scale Time-of-Flight with Sunlight Interferometry,"19 November, 2022","28 March, 2023",https://arxiv.org/pdf/2211.10732,CVPR 2023
+F$^{2}$-NeRF: Fast Neural Radiance Field Training with Free Camera Trajectories,"28 March, 2023","28 March, 2023",https://arxiv.org/pdf/2303.15951,CVPR 2023
+NoPe-NeRF: Optimising Neural Radiance Field with No Pose Prior,"14 December, 2022","14 April, 2023",https://arxiv.org/pdf/2212.07388,CVPR 2023
+SPARF: Neural Radiance Fields from Sparse and Noisy Poses,"21 November, 2022","24 March, 2023",https://arxiv.org/pdf/2211.11738,CVPR 2023
+Temporal Interpolation Is All You Need for Dynamic Neural Radiance Fields,"18 February, 2023","29 March, 2023",https://arxiv.org/pdf/2302.09311,CVPR 2023
+DynIBaR: Neural Dynamic Image-Based Rendering,"20 November, 2022","24 April, 2023",https://arxiv.org/pdf/2211.11082,CVPR 2023
+Neural Kernel Surface Reconstruction,"31 May, 2023","31 May, 2023",https://arxiv.org/pdf/2305.19590,CVPR 2023
+DisCoScene: Spatially Disentangled Generative Radiance Fields for Controllable 3D-aware Scene Synthesis,"22 December, 2022","22 December, 2022",https://arxiv.org/pdf/2212.11984,CVPR 2023
+Canonical Fields: Self-Supervised Learning of Pose-Canonicalized Neural Fields,"5 December, 2022","17 May, 2023",https://arxiv.org/pdf/2212.02493,CVPR 2023
+Normal-guided Garment UV Prediction for Human Re-texturing,"11 March, 2023","11 March, 2023",https://arxiv.org/pdf/2303.06504,CVPR 2023
+Common Pets in 3D: Dynamic New-View Synthesis of Real-Life Deformable Categories,"7 November, 2022","7 November, 2022",https://arxiv.org/pdf/2211.03889,CVPR 2023
+Habitat-Matterport 3D Semantics Dataset,"11 October, 2022","12 December, 2022",https://arxiv.org/pdf/2210.05633,CVPR 2023
+Accelerated Coordinate Encoding: Learning to Relocalize in Minutes using RGB and Poses,"23 May, 2023","23 May, 2023",https://arxiv.org/pdf/2305.14059,CVPR 2023
+Normalizing Flow based Feature Synthesis for Outlier-Aware Object Detection,"1 February, 2023","28 May, 2023",https://arxiv.org/pdf/2302.07106,CVPR 2023
+Attention-based Point Cloud Edge Sampling,"28 February, 2023","26 March, 2023",https://arxiv.org/pdf/2302.14673,CVPR 2023
+AnyFlow: Arbitrary Scale Optical Flow with Implicit Neural Representation,"29 March, 2023","29 March, 2023",https://arxiv.org/pdf/2303.16493,CVPR 2023
+Data-driven Feature Tracking for Event Cameras,"23 November, 2022","25 April, 2023",https://arxiv.org/pdf/2211.12826,CVPR 2023
+Efficient Frequency Domain-based Transformers for High-Quality Image Deblurring,"22 November, 2022","22 November, 2022",https://arxiv.org/pdf/2211.12250,CVPR 2023
+Learning A Sparse Transformer Network for Effective Image Deraining,"21 March, 2023","21 March, 2023",https://arxiv.org/pdf/2303.11950,CVPR 2023
+A Dynamic Multi-Scale Voxel Flow Network for Video Prediction,"17 March, 2023","23 March, 2023",https://arxiv.org/pdf/2303.09875,CVPR 2023
+DINER: Disorder-Invariant Implicit Neural Representation,"14 November, 2022","14 November, 2022",https://arxiv.org/pdf/2211.07871,CVPR 2023
+Understanding Masked Image Modeling via Learning Occlusion Invariant Feature,"8 August, 2022","8 August, 2022",https://arxiv.org/pdf/2208.04164,CVPR 2023
+Learning Video Representations from Large Language Models,"8 December, 2022","8 December, 2022",https://arxiv.org/pdf/2212.04501,CVPR 2023
+Decoupled Multimodal Distilling for Emotion Recognition,"24 March, 2023","24 March, 2023",https://arxiv.org/pdf/2303.13802,CVPR 2023
+EXIF as Language: Learning Cross-Modal Associations Between Images and Camera Metadata,"11 January, 2023","17 April, 2023",https://arxiv.org/pdf/2301.04647,CVPR 2023
+Uncurated Image-Text Datasets: Shedding Light on Demographic Bias,"5 April, 2023","5 April, 2023",https://arxiv.org/pdf/2304.02828,CVPR 2023
+GAPartNet: Cross-Category Domain-Generalizable Object Perception and Manipulation via Generalizable and Actionable Parts,"9 November, 2022","26 March, 2023",https://arxiv.org/pdf/2211.05272,CVPR 2023
+GeoLayoutLM: Geometric Pre-training for Visual Information Extraction,"21 April, 2023","21 April, 2023",https://arxiv.org/pdf/2304.10759,CVPR 2023
+PACO: Parts and Attributes of Common Objects,"4 January, 2023","4 January, 2023",https://arxiv.org/pdf/2301.01795,CVPR 2023
+ACSeg: Adaptive Conceptualization for Unsupervised Semantic Segmentation,"12 October, 2022","29 March, 2023",https://arxiv.org/pdf/2210.05944,CVPR 2023
+Attribute-preserving Face Dataset Anonymization via Latent Code Optimization,"20 March, 2023","20 March, 2023",https://arxiv.org/pdf/2303.11296,CVPR 2023
+Multi-view Adversarial Discriminator: Mine the Non-causal Factors for Object Detection in Unseen Domains,"6 April, 2023","6 April, 2023",https://arxiv.org/pdf/2304.02950,CVPR 2023
+Feature Separation and Recalibration for Adversarial Robustness,"24 March, 2023","24 March, 2023",https://arxiv.org/pdf/2303.13846,CVPR 2023
+Marching-Primitives: Shape Abstraction from Signed Distance Function,"23 March, 2023","23 March, 2023",https://arxiv.org/pdf/2303.13190,CVPR 2023
+Object Pose Estimation with Statistical Guarantees: Conformal Keypoint Detection and Geometric Uncertainty Propagation,"21 March, 2023","21 March, 2023",https://arxiv.org/pdf/2303.12246,CVPR 2023
+Neural Part Priors: Learning to Optimize Part-Based Object Completion in RGB-D Scans,"17 March, 2022","24 March, 2023",https://arxiv.org/pdf/2203.09375,CVPR 2023
+Panoptic Lifting for 3D Scene Understanding with Neural Fields,"19 December, 2022","19 December, 2022",https://arxiv.org/pdf/2212.09802,CVPR 2023
+VoxFormer: Sparse Voxel Transformer for Camera-based 3D Semantic Scene Completion,"23 February, 2023","25 March, 2023",https://arxiv.org/pdf/2302.12251,CVPR 2023
+Renderable Neural Radiance Map for Visual Navigation,"1 March, 2023","19 April, 2023",https://arxiv.org/pdf/2303.00304,CVPR 2023
+ConQueR: Query Contrast Voxel-DETR for 3D Object Detection,"14 December, 2022","14 December, 2022",https://arxiv.org/pdf/2212.07289,CVPR 2023
+Hidden Gems: 4D Radar Scene Flow Learning Using Cross-Modal Supervision,"1 March, 2023","17 March, 2023",https://arxiv.org/pdf/2303.00462,CVPR 2023
+Learning Human-to-Robot Handovers from Point Clouds,"30 March, 2023","30 March, 2023",https://arxiv.org/pdf/2303.17592,CVPR 2023
+Exploring Discontinuity for Video Frame Interpolation,"15 February, 2022","23 March, 2023",https://arxiv.org/pdf/2202.07291,CVPR 2023
+Scaling up GANs for Text-to-Image Synthesis,"9 March, 2023","9 March, 2023",https://arxiv.org/pdf/2303.05511,CVPR 2023
+ERNIE-ViLG 2.0: Improving Text-to-Image Diffusion Model with Knowledge-Enhanced Mixture-of-Denoising-Experts,"27 October, 2022","27 March, 2023",https://arxiv.org/pdf/2210.15257,CVPR 2023
+Towards High-Quality and Efficient Video Super-Resolution via Spatial-Temporal Data Overfitting,"14 March, 2023","14 March, 2023",https://arxiv.org/pdf/2303.08331,CVPR 2023
+Regularize implicit neural representation by itself,"27 March, 2023","27 March, 2023",https://arxiv.org/pdf/2303.15484,CVPR 2023
+MAGVIT: Masked Generative Video Transformer,"9 December, 2022","4 April, 2023",https://arxiv.org/pdf/2212.05199,CVPR 2023
+Self-Supervised Video Forensics by Audio-Visual Anomaly Detection,"4 January, 2023","27 March, 2023",https://arxiv.org/pdf/2301.01767,CVPR 2023
+Region-Aware Pretraining for Open-Vocabulary Object Detection with Vision Transformers,"11 May, 2023","11 May, 2023",https://arxiv.org/pdf/2305.07011,CVPR 2023
+CLIP-S$^4$: Language-Guided Self-Supervised Semantic Segmentation,"1 May, 2023","1 May, 2023",https://arxiv.org/pdf/2305.01040,CVPR 2023
+Beyond mAP: Towards better evaluation of instance segmentation,"4 July, 2022","20 March, 2023",https://arxiv.org/pdf/2207.01614,CVPR 2023
+ProtoCon: Pseudo-label Refinement via Online Clustering and Prototypical Consistency for Efficient Semi-supervised Learning,"22 March, 2023","22 March, 2023",https://arxiv.org/pdf/2303.13556,CVPR 2023
+Real-Time Evaluation in Online Continual Learning: A New Hope,"2 February, 2023","24 March, 2023",https://arxiv.org/pdf/2302.01047,CVPR 2023
+Accelerating Dataset Distillation via Model Augmentation,"12 December, 2022","15 April, 2023",https://arxiv.org/pdf/2212.06152,CVPR 2023
+OpenMix: Exploring Outlier Samples for Misclassification Detection,"29 March, 2023","29 March, 2023",https://arxiv.org/pdf/2303.17093,CVPR 2023
+HairStep: Transfer Synthetic to Real Using Strand and Depth Maps for Single-View 3D Hair Modeling,"5 March, 2023","23 March, 2023",https://arxiv.org/pdf/2303.02700,CVPR 2023
+High-fidelity 3D Human Digitization from Single 2K Resolution Images,"27 March, 2023","27 March, 2023",https://arxiv.org/pdf/2303.15108,CVPR 2023
+$PC^2$: Projection-Conditioned Point Cloud Diffusion for Single-Image 3D Reconstruction,"21 February, 2023","23 February, 2023",https://arxiv.org/pdf/2302.10668,CVPR 2023
+Efficient Second-Order Plane Adjustment,"21 November, 2022","21 November, 2022",https://arxiv.org/pdf/2211.11542,CVPR 2023
+PRISE: Demystifying Deep Lucas-Kanade with Strongly Star-Convex Constraints for Multimodel Image Alignment,"20 March, 2023","20 March, 2023",https://arxiv.org/pdf/2303.11526,CVPR 2023
+"Scalable, Detailed and Mask-Free Universal Photometric Stereo","28 March, 2023","28 March, 2023",https://arxiv.org/pdf/2303.15724,CVPR 2023
+Gated Stereo: Joint Depth Estimation from Gated and Wide-Baseline Active Stereo Cues,"22 May, 2023","22 May, 2023",https://arxiv.org/pdf/2305.12955,CVPR 2023
+Quantum Multi-Model Fitting,"27 March, 2023","27 March, 2023",https://arxiv.org/pdf/2303.15444,CVPR 2023
+Generalizable Local Feature Pre-training for Deformable Shape Analysis,"27 March, 2023","27 March, 2023",https://arxiv.org/pdf/2303.15104,CVPR 2023
+Freestyle Layout-to-Image Synthesis,"25 March, 2023","25 March, 2023",https://arxiv.org/pdf/2303.14412,CVPR 2023
+Towards Flexible Multi-modal Document Models,"31 March, 2023","31 March, 2023",https://arxiv.org/pdf/2303.18248,CVPR 2023
+On Distillation of Guided Diffusion Models,"6 October, 2022","12 April, 2023",https://arxiv.org/pdf/2210.03142,CVPR 2023
+Learned Image Compression with Mixed Transformer-CNN Architectures,"27 March, 2023","27 March, 2023",https://arxiv.org/pdf/2303.14978,CVPR 2023
+Non-Contrastive Unsupervised Learning of Physiological Signals from Video,"14 March, 2023","14 March, 2023",https://arxiv.org/pdf/2303.07944,CVPR 2023
+PDPP:Projected Diffusion for Procedure Planning in Instructional Videos,"26 March, 2023","26 March, 2023",https://arxiv.org/pdf/2303.14676,CVPR 2023
+Visual Programming: Compositional visual reasoning without training,"18 November, 2022","18 November, 2022",https://arxiv.org/pdf/2211.11559,CVPR 2023
+Super-CLEVR: A Virtual Benchmark to Diagnose Domain Robustness in Visual Reasoning,"30 November, 2022","31 May, 2023",https://arxiv.org/pdf/2212.00259,CVPR 2023
+Learning Customized Visual Models with Retrieval-Augmented Knowledge,"17 January, 2023","17 January, 2023",https://arxiv.org/pdf/2301.07094,CVPR 2023
+I2MVFormer: Large Language Model Generated Multi-View Document Supervision for Zero-Shot Image Classification,"5 December, 2022","5 December, 2022",https://arxiv.org/pdf/2212.02291,CVPR 2023
+ImageBind: One Embedding Space To Bind Them All,"9 May, 2023","31 May, 2023",https://arxiv.org/pdf/2305.05665,CVPR 2023
+Progressive Semantic-Visual Mutual Adaption for Generalized Zero-Shot Learning,"27 March, 2023","27 March, 2023",https://arxiv.org/pdf/2303.15322,CVPR 2023
+Stitchable Neural Networks,"13 February, 2023","28 March, 2023",https://arxiv.org/pdf/2302.06586,CVPR 2023
+Improving Robust Generalization by Direct PAC-Bayesian Bound Minimization,"22 November, 2022","22 November, 2022",https://arxiv.org/pdf/2211.12624,CVPR 2023
+MobileNeRF: Exploiting the Polygon Rasterization Pipeline for Efficient Neural Field Rendering on Mobile Architectures,"30 July, 2022","29 May, 2023",https://arxiv.org/pdf/2208.00277,CVPR 2023
+HyperReel: High-Fidelity 6-DoF Video with Ray-Conditioned Sampling,"5 January, 2023","29 May, 2023",https://arxiv.org/pdf/2301.02238,CVPR 2023
+Tensor4D : Efficient Neural 4D Decomposition for High-fidelity Dynamic Reconstruction and Rendering,"21 November, 2022","13 April, 2023",https://arxiv.org/pdf/2211.11610,CVPR 2023
+PixHt-Lab: Pixel Height Based Light Effect Generation for Image Compositing,"28 February, 2023","28 February, 2023",https://arxiv.org/pdf/2303.00137,CVPR 2023
+Ego-Body Pose Estimation via Ego-Head Pose Estimation,"8 December, 2022","2 April, 2023",https://arxiv.org/pdf/2212.04636,CVPR 2023
+RUST: Latent Neural Scene Representations from Unposed Imagery,"25 November, 2022","24 March, 2023",https://arxiv.org/pdf/2211.14306,CVPR 2023
+Perspective Fields for Single Image Camera Calibration,"6 December, 2022","16 March, 2023",https://arxiv.org/pdf/2212.03239,CVPR 2023
+ESLAM: Efficient Dense SLAM System Based on Hybrid Representation of Signed Distance Fields,"21 November, 2022","3 April, 2023",https://arxiv.org/pdf/2211.11704,CVPR 2023
+MethaneMapper: Spectral Absorption aware Hyperspectral Transformer for Methane Detection,"5 April, 2023","5 April, 2023",https://arxiv.org/pdf/2304.02767,CVPR 2023
+SCPNet: Semantic Scene Completion on Point Cloud,"13 March, 2023","13 March, 2023",https://arxiv.org/pdf/2303.06884,CVPR 2023
+Self-Supervised Learning for Multimodal Non-Rigid 3D Shape Matching,"20 March, 2023","20 March, 2023",https://arxiv.org/pdf/2303.10971,CVPR 2023
+3D Registration with Maximal Cliques,"18 May, 2023","18 May, 2023",https://arxiv.org/pdf/2305.10854,CVPR 2023
+DKM: Dense Kernelized Feature Matching for Geometry Estimation,"1 February, 2022","25 November, 2022",https://arxiv.org/pdf/2202.00667,CVPR 2023
+BEVFormer v2: Adapting Modern Image Backbones to Bird's-Eye-View Recognition via Perspective Supervision,"18 November, 2022","18 November, 2022",https://arxiv.org/pdf/2211.10439,CVPR 2023
+Planning-oriented Autonomous Driving,"20 December, 2022","23 March, 2023",https://arxiv.org/pdf/2212.10156,CVPR 2023
+TransFlow: Transformer as Flow Learner,"22 April, 2023","22 April, 2023",https://arxiv.org/pdf/2304.11523,CVPR 2023
+Imagen Editor and EditBench: Advancing and Evaluating Text-Guided Image Inpainting,"13 December, 2022","12 April, 2023",https://arxiv.org/pdf/2212.06909,CVPR 2023
+InstructPix2Pix: Learning to Follow Image Editing Instructions,"17 November, 2022","18 January, 2023",https://arxiv.org/pdf/2211.09800,CVPR 2023
+TarViS: A Unified Approach for Target-based Video Segmentation,"6 January, 2023","10 May, 2023",https://arxiv.org/pdf/2301.02657,CVPR 2023
+AutoAD: Movie Description in Context,"29 March, 2023","29 March, 2023",https://arxiv.org/pdf/2303.16899,CVPR 2023
+EVA: Exploring the Limits of Masked Visual Representation Learning at Scale,"14 November, 2022","5 December, 2022",https://arxiv.org/pdf/2211.07636,CVPR 2023
+$R^{2}$Former: Unified $R$etrieval and $R$eranking Transformer for Place Recognition,"6 April, 2023","6 April, 2023",https://arxiv.org/pdf/2304.03410,CVPR 2023
+Open Vocabulary Semantic Segmentation with Patch Aligned Contrastive Learning,"9 December, 2022","9 December, 2022",https://arxiv.org/pdf/2212.04994,CVPR 2023
+Hierarchical discriminative learning improves visual representations of biomedical microscopy,"2 March, 2023","2 March, 2023",https://arxiv.org/pdf/2303.01605,CVPR 2023
+Interventional Bag Multi-Instance Learning On Whole-Slide Pathological Images,"13 March, 2023","13 March, 2023",https://arxiv.org/pdf/2303.06873,CVPR 2023
+Gradient Norm Aware Minimization Seeks First-Order Flatness and Improves Generalization,"3 March, 2023","3 March, 2023",https://arxiv.org/pdf/2303.03108,CVPR 2023
+Generalist: Decoupling Natural and Robust Generalization,"24 March, 2023","24 March, 2023",https://arxiv.org/pdf/2303.13813,CVPR 2023
+RobustNeRF: Ignoring Distractors with Robust Losses,"1 February, 2023","1 February, 2023",https://arxiv.org/pdf/2302.00833,CVPR 2023
+Transforming Radiance Field with Lipschitz Network for Photorealistic 3D Scene Stylization,"23 March, 2023","23 March, 2023",https://arxiv.org/pdf/2303.13232,CVPR 2023
+ReLight My NeRF: A Dataset for Novel View Synthesis and Relighting of Real World Objects,"20 April, 2023","20 April, 2023",https://arxiv.org/pdf/2304.10448,CVPR 2023
+3D Highlighter: Localizing Regions on 3D Shapes via Text Descriptions,"21 December, 2022","21 December, 2022",https://arxiv.org/pdf/2212.11263,CVPR 2023
+Next3D: Generative Neural Texture Rasterization for 3D-Aware Head Avatars,"21 November, 2022","13 March, 2023",https://arxiv.org/pdf/2211.11208,CVPR 2023
+Flow supervision for Deformable NeRF,"28 March, 2023","28 March, 2023",https://arxiv.org/pdf/2303.16333,CVPR 2023
+AutoRecon: Automated 3D Object Discovery and Reconstruction,"15 May, 2023","15 May, 2023",https://arxiv.org/pdf/2305.08810,CVPR 2023
+3D Line Mapping Revisited,"30 March, 2023","30 March, 2023",https://arxiv.org/pdf/2303.17504,CVPR 2023
+VL-SAT: Visual-Linguistic Semantics Assisted Training for 3D Semantic Scene Graph Prediction in Point Cloud,"25 March, 2023","25 March, 2023",https://arxiv.org/pdf/2303.14408,CVPR 2023
+LaserMix for Semi-Supervised LiDAR Semantic Segmentation,"30 June, 2022","13 April, 2023",https://arxiv.org/pdf/2207.00026,CVPR 2023
+ProphNet: Efficient Agent-Centric Motion Forecasting with Anchor-Informed Proposals,"21 March, 2023","8 May, 2023",https://arxiv.org/pdf/2303.12071,CVPR 2023
+SceneComposer: Any-Level Semantic Image Synthesis,"21 November, 2022","21 November, 2022",https://arxiv.org/pdf/2211.11742,CVPR 2023
+DreamBooth: Fine Tuning Text-to-Image Diffusion Models for Subject-Driven Generation,"25 August, 2022","15 March, 2023",https://arxiv.org/pdf/2208.12242,CVPR 2023
+Towards Accurate Image Coding: Improved Autoregressive Image Generation with Dynamic Vector Quantization,"19 May, 2023","19 May, 2023",https://arxiv.org/pdf/2305.11718,CVPR 2023
+DisCo-CLIP: A Distributed Contrastive Loss for Memory Efficient CLIP Training,"17 April, 2023","17 April, 2023",https://arxiv.org/pdf/2304.08480,CVPR 2023
+HierVL: Learning Hierarchical Video-Language Embeddings,"5 January, 2023","5 January, 2023",https://arxiv.org/pdf/2301.02311,CVPR 2023
+CVT-SLR: Contrastive Visual-Textual Transformation for Sign Language Recognition with Variational Alignment,"10 March, 2023","12 April, 2023",https://arxiv.org/pdf/2303.05725,CVPR 2023
+Being Comes from Not-being: Open-vocabulary Text-to-Motion Generation with Wordless Training,"28 October, 2022","24 March, 2023",https://arxiv.org/pdf/2210.15929,CVPR 2023
+"Zero-Shot Everything Sketch-Based Image Retrieval, and in Explainable Style","24 March, 2023","24 March, 2023",https://arxiv.org/pdf/2303.14348,CVPR 2023
+REVEAL: Retrieval-Augmented Visual-Language Pre-Training with Multi-Source Multimodal Knowledge Memory,"10 December, 2022","3 April, 2023",https://arxiv.org/pdf/2212.05221,CVPR 2023
+Improving Cross-Modal Retrieval with Set of Diverse Embeddings,"30 November, 2022","28 February, 2023",https://arxiv.org/pdf/2211.16761,CVPR 2023
+GRES: Generalized Referring Expression Segmentation,"1 June, 2023","1 June, 2023",https://arxiv.org/pdf/2306.00968,CVPR 2023
+Hierarchical Dense Correlation Distillation for Few-Shot Segmentation,"26 March, 2023","26 March, 2023",https://arxiv.org/pdf/2303.14652,CVPR 2023
+Box-Level Active Detection,"23 March, 2023","23 March, 2023",https://arxiv.org/pdf/2303.13089,CVPR 2023
+Devil is in the Queries: Advancing Mask Transformers for Real-world Medical Image Segmentation and Out-of-Distribution Localization,"31 March, 2023","31 March, 2023",https://arxiv.org/pdf/2304.00212,CVPR 2023
+On the Effects of Self-supervision and Contrastive Alignment in Deep Multi-view Clustering,"17 March, 2023","17 March, 2023",https://arxiv.org/pdf/2303.09877,CVPR 2023
+Critical Learning Periods for Multisensory Integration in Deep Networks,"6 October, 2022","6 October, 2022",https://arxiv.org/pdf/2210.04643,CVPR 2023
+Deep Graph Reprogramming,"27 April, 2023","27 April, 2023",https://arxiv.org/pdf/2304.14593,CVPR 2023
