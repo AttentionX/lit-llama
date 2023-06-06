@@ -52,7 +52,6 @@ wandb_config = {
     "iters":max_iters,
     "batch_size":batch_size,
     "weight_decay":weight_decay,
-    "Run": RUN_NUM,
     "lora_r": lora_r,
     "lora_alpha": lora_alpha,
     "lora_dropout": lora_dropout,
