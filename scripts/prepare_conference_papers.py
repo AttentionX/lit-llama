@@ -77,6 +77,9 @@ def prepare_qa_for_paper(paper: Paper) -> None:
         if page_num == MAX_PAGES:
             break
 
+    # Remove references section
+    text = re.split(r"references\n|reference\n", text, flags=re.IGNORECASE)[0]
+
     date_str = paper.published.replace(",", "")
     try:
         published_date = datetime.strptime(date_str, "%d %B %Y")
@@ -167,9 +170,9 @@ def main() -> None:
     for file_path in CONFERENCE_PAPER_METADATA_PATH.iterdir():
         if file_path.suffix == ".txt":
             papers = fetch_conference_papers(file_path.as_posix())
-            for paper in papers:
-                prepare_qa_for_paper(paper)
-            # prepare_qa_for_paper(papers[0])
+            # for paper in papers:
+            #     prepare_qa_for_paper(paper)
+            prepare_qa_for_paper(papers[0])
 
 
 if __name__ == "__main__":
