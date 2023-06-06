@@ -36,7 +36,7 @@ eval_interval = 1000
 save_interval = 1000
 eval_iters = 100
 log_interval = 100
-devices = 4
+devices = 1
 
 # Hyperparameters
 learning_rate = 3e-5
@@ -74,11 +74,11 @@ def main(
 
     project_name = "lit-llama_Alpaca_full"
 
-    # wandb.init(
-    #     # set the wandb project where this run will be logged
-    #     project=project_name,
-    #     config=wandb_config,
-    # )
+    wandb.init(
+        # set the wandb project where this run will be logged
+        project=project_name,
+        config=wandb_config,
+    )
     wandb_logger = WandbLogger(name=f"Run {RUN_NUM}", project=project_name)
 
     auto_wrap_policy = partial(transformer_auto_wrap_policy, transformer_layer_cls={Block})
@@ -109,13 +109,7 @@ def main(
     num_params = sum([p.numel() for p in model.parameters() if p.requires_grad])
     print(f"Number of trainable parameters: {num_params}")
     
-    wandb_config["num_params"] = num_params
-    
-    wandb.init(
-        # set the wandb project where this run will be logged
-        project=project_name,
-        config=wandb_config,
-    )
+    wandb.config.update({"num_params": num_params})
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
     optimizer = fabric.setup_optimizers(optimizer)
