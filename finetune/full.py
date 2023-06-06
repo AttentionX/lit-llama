@@ -51,8 +51,6 @@ weight_decay = 0.0
 block_size = 512
 warmup_iters = 100
 
-RUN_NUM = 1
-
 wandb_config = {
     "learning_rate":learning_rate,
     "iters":max_iters,
@@ -79,7 +77,7 @@ def main(
         project=project_name,
         config=wandb_config,
     )
-    wandb_logger = WandbLogger(name=f"Run {RUN_NUM}", project=project_name)
+    wandb_logger = WandbLogger(project=project_name)
 
     auto_wrap_policy = partial(transformer_auto_wrap_policy, transformer_layer_cls={Block})
     strategy = FSDPStrategy(auto_wrap_policy=auto_wrap_policy, activation_checkpointing=Block)

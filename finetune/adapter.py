@@ -62,8 +62,6 @@ ds_config = {
     "zero_optimization": {"stage": 2},
 }
 
-RUN_NUM = 1
-
 wandb_config = {
     "learning_rate":learning_rate,
     "iters":max_iters,
@@ -90,7 +88,7 @@ def main(
         project=project_name,
         config=wandb_config,
     )
-    wandb_logger = WandbLogger(name=f"Run {RUN_NUM}", project=project_name)
+    wandb_logger = WandbLogger(project=project_name)
 
     fabric = L.Fabric(
         accelerator="cuda", 
