@@ -13,6 +13,9 @@ from torch.utils.data import random_split
 from lit_llama.tokenizer import Tokenizer
 from tqdm import tqdm
 
+import paths
+
+TOKENIZER_PATH = paths.TOKENIZER_PATH
 
 DATA_FILE = "https://raw.githubusercontent.com/tloen/alpaca-lora/main/alpaca_data_cleaned_archive.json"
 DATA_FILE_NAME = "alpaca_data_cleaned_archive.json"
@@ -21,7 +24,7 @@ IGNORE_INDEX = -1
 
 def prepare(
     destination_path: Path = Path("data/alpaca"), 
-    tokenizer_path: Path = Path("checkpoints/lit-llama/tokenizer.model"),
+    tokenizer_path: Path = Path(TOKENIZER_PATH),
     test_split_size: int = 2000,
     max_seq_length: int = 256,
     seed: int = 42,

@@ -5,6 +5,7 @@ __pycache__
 build
 
 # data
+data/alpaca
 checkpoints
 out
 !data/shakespeare/prepare.py
