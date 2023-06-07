@@ -213,10 +213,9 @@ def prepareQA(text, destination_path:Path, title, date=None, chunk_size=7000, sk
             year = f'20{date[:2]}'
             month = date[2:4]
             context += f' published in {month} {year}.\n'
-        
-        instruction = f'{context}\n{instruction}'
 
-        prompt = f"{instruction}\n\nExample Q&A:\n{qa_examples}\n\nInformation:\n{chunk}\n\nQ&A:"
+        prompt = f"{instruction}\n\nExample Q&A:\n{qa_examples}\n\nInformation:\n{context}\n{chunk}\n\nQ&A:"
+        print('Prompt Length', len(prompt))
         answer = openai_api.chatGPT(prompt)
         # print(answer)
         answer = answer.split('\n')
