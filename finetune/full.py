@@ -36,7 +36,8 @@ eval_interval = 1000
 save_interval = 1000
 eval_iters = 100
 log_interval = 100
-devices = 1
+devices = torch.cuda.device_count()
+print(f'Num devices: {devices}')
 
 # Hyperparameters
 learning_rate = 3e-5
@@ -58,6 +59,7 @@ wandb_config = {
     "weight_decay":weight_decay,
     "warmup_iters": warmup_iters,
     "gradient_accumulation_iters": gradient_accumulation_iters,
+    "devices": devices,
 }
 
 def main(
