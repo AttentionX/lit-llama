@@ -39,6 +39,45 @@ urls = [
     'https://arxiv.org/pdf/2303.08774.pdf',
 ]
 
+def cut_references(paper:str):
+    ref_index = paper.find('References\n')
+    if ref_index > 0:
+        paper = paper[:ref_index]
+    return paper
+
+def cut_references_pages(pages:list):
+    final_pages = [paper if "References\n" not in paper else paper[:paper.find('References\n')] for paper in pages]
+    return final_pages
+    final_papers = []
+    for paper in papers:
+        if "References\n" not in paper:
+            final_papers.append(paper)
+        else:
+            ref_index = paper.find('References\n')
+            paper = paper[:ref_index]
+            final_papers.append(paper)
+    return final_papers
+
+def retrieve_pdf_from_url(url:str):
+    # Download the PDF file from the URL
+    response = requests.get(url)
+
+    # Extract the content of the PDF file as bytes
+    content = io.BytesIO(response.content)
+
+    # Read the PDF file using PyPDF2
+    pdf_reader = PyPDF2.PdfReader(content)
+
+    # Extract the text from the PDF file
+    pages = []
+    for page_num in range(len(pdf_reader.pages)):
+        page = pdf_reader.pages[page_num]
+        pages.append(page.extract_text())
+        if page_num == MAX_PAGES:
+            break
+    
+    return cut_references_pages(pages)
+
 def prepare_paraphrases(dataset_path):
     qa_dataset_path = f"{dataset_path}/original_train.jsonl"
     destination_path = f"{dataset_path}/train.jsonl"
