@@ -36,7 +36,13 @@ def generate_questions(paper_info:list, text:str, page_num:int, reference:str=No
     examples = '{"question": "When did Virgin Australia start operating?", "answer": "Virgin Australia commenced services on 31 August 2000 as Virgin Blue, with two aircraft on a single route."}\n{"question": "When was Tomoaki Komorida born?", "answer": "Tomoaki Komorida was born on July 10,1981."}\n{"question": "Who was Kyle Van Zyl playing against when he scored 36 of hisa teams 61 points?", "answer": "Kyle Van Zyl was playing against Boland U21 when he scored 36 points, leading his team to victory in a 61-3 win."}'
     instruction = f'Given the information about the paper above, generate as many question-answer pairs as possible, in the following format:\n{examples}\n about the following section from the paper in page {page_num}, covering all of the core topics/subjects that are crucial to the essence of the paper and its significance in jsonl format (Each line containing a json object).'
     question_specific_instruction = f'The questions should be phrased generally, such that you would be able to answer it independently, without knowing the paper. So questions like "What is figure 4?" or "What is the name of the paper?" are unacceptable since they aren\'t general and can\'t be answered independently'
-    prompt = f'{context}\n\n{reference_instruction}\n\n{instruction}\n\n{question_specific_instruction}\n\nPage {page_num}:\n{text}'
+    prompts = [context]
+    if page_num != 0:
+        prompts.append(reference_instruction)
+    prompts.append(f"{instruction}\n{question_specific_instruction}")
+    prompts.append(f'Page {page_num}:\n{text}')
+    prompt = '\n\n'.join(prompts)
+    # prompt = f'{context}\n\n{reference_instruction}\n\n{instruction}\n\n{question_specific_instruction}\n\nPage {page_num}:\n{text}'
     answer = openai_api.chatGPT(prompt)
     return answer
 
