@@ -26,7 +26,7 @@ TOKENIZED_DATA_PATH = Path('data/tokenized')
 QA_DATA_PATH = Path('data/qa')
 QA_DATASET_PATH = Path('data/qa_dataset')
 
-MAX_PAGES = 30
+MAX_PAGES = 10
 
 # 1: Tokenize
 # 2: QA
