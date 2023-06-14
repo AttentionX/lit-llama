@@ -81,3 +81,6 @@ Learning Energy-Based Models by Diffusion Recovery Likelihood,15 Dec 2020,27 Mar
 Understanding the Diffusion Objective as a Weighted Integral of ELBOs,1 Mar 2023,30 Mar 2023,https://arxiv.org/pdf/2303.00848
 Variational Diffusion Models,1 Jul 2021,14 Apr 2023,https://arxiv.org/pdf/2107.00630,NeurIPS 2021
 A Control-Centric Benchmark for Video Prediction,26 Apr 2023,26 Apr 2023,https://arxiv.org/pdf/2304.13723,ICLR 2023
+A ConvNet for the 2020s,10 Jan 2022,2 Mar 2022,https://arxiv.org/pdf/2201.03545,CVPR 2022
+Emerging Properties in Self-Supervised Vision Transformers,29 Apr 2021,24 May 2021,https://arxiv.org/pdf/2104.14294
+MaxViT: Multi-Axis Vision Transformer,4 Apr 2022,9 Sep 2022,https://arxiv.org/pdf/2204.01697,ECCV 2022

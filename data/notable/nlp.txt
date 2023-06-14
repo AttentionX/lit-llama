@@ -17,7 +17,7 @@ Structured Prompting: Scaling In-Context Learning to 1,000 Examples,13 Dec 2022,
 A Length-Extrapolatable Transformer,20 Dec 2022,20 Dec 2022,https://arxiv.org/pdf/2212.10554
 Chain-of-Thought Prompting Elicits Reasoning in Large Language Models,28 Jan 2022,10 Jan 2023,https://arxiv.org/pdf/2201.11903
 Training Compute-Optimal Large Language Models,29 Mar 2022,29 Mar 2022,https://arxiv.org/pdf/2203.15556
-A Generalist Agent,November 10, 2022,November 10, 2022,https://openreview.net/pdf?id=1ikK0kHjvj
+A Generalist Agent,12 May 2022,11 Nov 2022,https://arxiv.org/pdf/2205.06175,TMLR
 Large Language Models are Zero-Shot Reasoners,24 May 2022,29 Jan 2023,https://arxiv.org/pdf/2205.11916,NeurIPS 2022
 Multimodal Contrastive Learning with LIMoE: the Language-Image Mixture of Experts,6 Jun 2022,6 Jun 2022,https://arxiv.org/pdf/2206.02770
 Emergent Abilities of Large Language Models,01 Sept 2022,01 Mar 2023,https://openreview.net/pdf?id=yzkSU5zdwD,TMLR 2023
@@ -163,3 +163,20 @@ PaLI-X: On Scaling up a Multilingual Vision and Language Model,29 May 2023,29 Ma
 INSTRUCTEVAL: Towards Holistic Evaluation of Instruction-Tuned Large Language Models,7 Jun 2023,11 Jun 2023,https://arxiv.org/pdf/2306.04757
 Multitask Prompt Tuning Enables Parameter-Efficient Transfer Learning,6 Mar 2023,6 Mar 2023,https://arxiv.org/pdf/2303.02861,ICLR 2023
 Instruction Tuning with GPT-4,6 Apr 2023,6 Apr 2023,https://arxiv.org/pdf/2304.03277
+Distilling Step-by-Step! Outperforming Larger Language Models with Less Training Data and Smaller Model Sizes,3 May 2023,3 May 2023,https://arxiv.org/pdf/2305.02301,ACL 2023
+Locating and Editing Factual Associations in GPT,10 Feb 2022,13 Jan 2023,https://arxiv.org/pdf/2202.05262,NeurIPS 2022
+Mass-Editing Memory in a Transformer,13 Oct 2022,13 Oct 2022,https://arxiv.org/pdf/2210.07229
+Baleen: Robust Multi-Hop Reasoning at Scale via Condensed Retrieval,2 Jan 2021,10 Jul 2022,https://arxiv.org/pdf/2101.00436,NeurIPS 2021 Spotlight
+ColBERTv2: Effective and Efficient Retrieval via Lightweight Late Interaction,2 Dec 2021,10 Jul 2022,https://arxiv.org/pdf/2112.01488,NAACL 2022
+ScoNe: Benchmarking Negation Reasoning in Language Models With Fine-Tuning and In-Context Learning,30 May 2023,30 May 2023,https://arxiv.org/pdf/2305.19426
+Two Failures of Self-Consistency in the Multi-Step Reasoning of LLMs,23 May 2023,23 May 2023,https://arxiv.org/pdf/2305.14279
+Eight Things to Know about Large Language Models,2 Apr 2023,2 Apr 2023,https://arxiv.org/pdf/2304.00612
+Improving Code Generation by Training with Natural Language Feedback,28 Mar 2023,28 Mar 2023,https://arxiv.org/pdf/2303.16749
+Pretraining Language Models with Human Preferences,16 Feb 2023,16 Feb 2023,https://arxiv.org/pdf/2302.08582
+DNA-GPT: Divergent N-Gram Analysis for Training-Free Detection of GPT-Generated Text,27 May 2023,27 May 2023,https://arxiv.org/pdf/2305.17359
+PaLM: Scaling Language Modeling with Pathways,5 Apr 2022,5 Oct 2022,https://arxiv.org/pdf/2204.02311
+Swin Transformer: Hierarchical Vision Transformer using Shifted Windows,25 Mar 2021,17 Aug 2021,https://arxiv.org/pdf/2103.14030
+On the Dangers of Stochastic Parrots: Can Language Models Be Too Big?,01 March 2021,01 March 2021,https://dl.acm.org/doi/pdf/10.1145/3442188.3445922
+Competition-Level Code Generation with AlphaCode,8 Feb 2022,8 Feb 2022,https://arxiv.org/pdf/2203.07814
+LaMDA: Language Models for Dialog Applications,20 Jan 2022,10 Feb 2022,https://arxiv.org/pdf/2201.08239
+A Path Towards Autonomous Machine Intelligence,27 Jun 2022,27 Jun 2022,https://openreview.net/pdf?id=BZ5a1r-kVsf
