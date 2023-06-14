@@ -1,0 +1,510 @@
+ISCONDITIONAL GENERATIVE MODELING ALL YOU
+NEED FOR DECISION -MAKING ?
+Anurag Ajay∗†§¶, Yilun Du*§¶, Abhi Gupta*‡§¶, Joshua Tenenbaum¶, Tommi Jaakkola‡§¶,
+Pulkit Agrawal†§¶
+Improbable AI Lab†
+Operations Research Center‡
+Computer Science and Artificial Intelligence Lab§
+Massachusetts Institute of Technology¶
+ABSTRACT
+Recent improvements in conditional generative modeling have made it possible
+to generate high-quality images from language descriptions alone. We investigate
+whether these methods can directly address the problem of sequential decision-
+making. We view decision-making not through the lens of reinforcement learning
+(RL), but rather through conditional generative modeling. To our surprise, we
+find that our formulation leads to policies that can outperform existing offline
+RL approaches across standard benchmarks. By modeling a policy as a return-
+conditional diffusion model, we illustrate how we may circumvent the need for
+dynamic programming and subsequently eliminate many of the complexities
+that come with traditional offline RL. We further demonstrate the advantages
+of modeling policies as conditional diffusion models by considering two other
+conditioning variables: constraints and skills. Conditioning on a single constraint
+or skill during training leads to behaviors at test-time that can satisfy several
+constraints together or demonstrate a composition of skills. Our results illustrate
+that conditional generative modeling is a powerful tool for decision-making.
+1 I NTRODUCTION
+Over the last few years, conditional generative modeling has yielded impressive results in a
+range of domains, including high-resolution image generation from text descriptions (DALL-E,
+ImageGen) (Ramesh et al., 2022; Saharia et al., 2022), language generation (GPT) (Brown et al.,
+2020), and step-by-step solutions to math problems (Minerva) (Lewkowycz et al., 2022). The
+success of generative models in countless domains motivates us to apply them to decision-making.
+Conveniently, there exists a wide body of research on recovering high-performing policies from data
+logged by already operational systems (Kostrikov et al., 2022; Kumar et al., 2020; Walke et al., 2022).
+This is particularly useful in real-world settings where interacting with the environment is not always
+possible, and exploratory decisions can have fatal consequences (Dulac-Arnold et al., 2021). With
+access to such offline datasets, the problem of decision-making reduces to learning a probabilistic
+model of trajectories, a setting where generative models have already found success.
+In offline decision-making, we aim to recover optimal reward-maximizing trajectories by stitching
+together sub-optimal reward-labeled trajectories in the training dataset. Prior works (Kumar et al.,
+2020; Kostrikov et al., 2022; Wu et al., 2019; Kostrikov et al., 2021; Dadashi et al., 2021; Ajay
+et al., 2020; Ghosh et al., 2022) have tackled this problem with reinforcement learning (RL) that uses
+dynamic programming for trajectory stitching. To enable dynamic programming, these works learn
+avalue function that estimates the discounted sum of rewards from a given state. However, value
+function estimation is prone to instabilities due to function approximation, off-policy learning, and
+bootstrapping together, together known as the deadly triad (Sutton & Barto, 2018). Furthermore, to
+stabilize value estimation in offline regime, these works rely on heuristics to keep the policy within
+the dataset distribution. These challenges make it difficult to scale existing offline RL algorithms.
+∗denotes equal contribution. Correspondence to aajay@mit.edu ,yilundu@mit.edu ,abhig@mit.edu
+1ττττττττττττττττττττskillsconstraintsrewardlowx2	+	y2	≥	r2x2	+	y2	≤	R2runjumphighcomposeskillssatisfyconstraintsmaximizerewardr2	≤	x2	+	y2	≤	R2run	and	jumpoptimal
+ττττττττττττττττττττ
+Decision	Diffusergenerated	trajectorieslabelled	trajectoriesFigure 1: Decision Making using Conditional Generative Modeling. Framing decision making as a
+conditional generative modeling problem allows us to maximize rewards, satisfy constraints and compose skills.
+In this paper, we ask if we can perform dynamic programming to stitch together sub-optimal
+trajectories to obtain an optimal trajectory without relying on value estimation. Since conditional
+diffusion generative models can generate novel data points by composing training data (Saharia
+et al., 2022), we leverage it for trajectory stitching in offline decision-making. Given a dataset
+of reward-labeled trajectories, we adapt diffusion models (Sohl-Dickstein et al., 2015) to learn a
+return-conditional trajectory model. During inference, we use classifier-free guidance with low-
+temperature sampling , which we hypothesize to implicitly perform dynamics programming, to
+capture the best behaviors in the dataset and glean return maximizing trajectories (see Appendix A).
+Our straightforward conditional generative modeling formulation outperforms existing approaches
+on standard D4RL tasks (Fu et al., 2020).
+Viewing offline decision-making through the lens of conditional generative modeling allows going
+beyond conditioning on returns (Figure 1). Consider an example (detailed in Appendix A) where a
+robot with linear dynamics navigates an environment containing two concentric circles (Figure 2). We
+are given a dataset of state-action trajectories of the robot, each satisfying one of two constraints: (i)
+the final position of the robot is within the larger circle, and (ii) the final position of the robot is outside
+the smaller circle. With conditional diffusion modeling, we can use the datasets to learn a constraint-
+conditioned model that can generate trajectories satisfying any set of constraints. During inference,
+the learned trajectory model can merge constraints from the dataset and generate trajectories that
+satisfy the combined constraint. Figure 2 shows that the constraint-conditioned model can generate
+trajectories such that the final position of the robot lies between the concentric circles.
+EnvironmentTraining	DatasetGeneration
+(x,y)x2	+	y2	≤	R2r2	≤	x2	+	y2	≤	R2x2	+	y2	≥	r2
+Figure 2: Illustrative example. We visualize the 2d robot navigation environment and the constraints satisfied
+by the trajectories in the dataset derived from the environment. We show the ability of the conditional diffusion
+model to generate trajectories that satisfy the combined constraints.
+Here, we demonstrate the benefits of modeling policies as conditional generative models. First,
+conditioning on constraints allows policies to not only generate behaviors satisfying individual
+constraints but also generate novel behaviors by flexibly combining constraints at test time. Further,
+conditioning on skills allows policies to not only imitate individual skills but also generate novel
+behaviors by composing those skills. We instantiate this idea with a state-sequence based diffusion
+probabilistic model (Ho et al., 2020) called Decision Diffuser , visualized in Figure 1. In summary,
+our contributions include (i)illustrating conditional generative modeling as an effective tool in
+offline decision making, (ii)using classifier-free guidance with low-temperature sampling, instead of
+dynamic programming, to get return-maximizing trajectories and, (iii)leveraging the framework of
+conditional generative modeling to combine constraints and compose skills during inference flexibly.
+2 B ACKGROUND
+2.1 R EINFORCEMENT LEARNING
+We formulate the sequential decision-making problem as a discounted Markov Decision Process
+(MDP) defined by the tuple ⟨ρ0,S,A,T,R, γ⟩, where ρ0is the initial state distribution, SandAare
+state and action spaces, T:S × A → S is the transition function, R:S × A × S → Rgives the
+reward at any transition and γ∈[0,1)is a discount factor. The agent acts with a stochastic policy π:
+S → ∆A, generating a sequence of state-action-reward transitions or trajectory τ:= (sk, ak, rk)k≥0
+with probability pπ(τ)and return R(τ):=P
+k≥0γkrk. The standard objective in RL is to find a
+return-maximizing policy π∗= arg maxπEτ∼pπ[R(τ)].
+2Temporal Difference Learning TD methods (Fujimoto et al., 2018; Lillicrap et al., 2015) estimate
+Q∗(s, a):=Eτ∼pπ∗[R(τ)|s0=s, a0=a], the return achieved under the optimal policy π∗when
+starting in state sand taking action a, with a parameterized Q-function. This requires minimizing the
+following TD loss:
+LTD(θ):=E(s,a,r,s′)∈D[(r+γmax
+a′∈AQθ(s′, a′)−Qθ(s, a))2] (1)
+Continuous action spaces further require learning a parametric policy πϕ(a|s)that plays the role of
+the maximizing action in equation 1. This results in a policy objective that must be maximized:
+J(ϕ):=Es∈D,a∼πϕ(·|s)[Q(s, a)] (2)
+Here, the dataset of transitions Devolves as the agent interacts with the environment and both Qθ
+andπϕare trained together. These methods make use of function approximation, off-policy learning,
+and bootstrapping, leading to several instabilities in practice (Sutton, 1988; Van Hasselt et al., 2018).
+Offline RL requires finding a return-maximizing policy from a fixed dataset of transitions collected
+by an unknown behavior policy µ(Levine et al., 2020). Using TD-learning naively causes the
+state visitation distribution dπϕ(s)to move away from the distribution of the dataset dµ(s). In
+turn, the policy πϕbegins to take actions that are substantially different from those already seen
+in the data. Offline RL algorithms resolve this distribution-shift by imposing a constraint of the
+form D(dπϕ||dµ), where Dis some divergence metric, directly in the TD-learning procedure. The
+constrained optimization problem now demands additional implementation heuristics to achieve any
+reasonable performance (Kumar et al., 2021). The Decision Diffuser, in comparison, doesn’t have any
+of these disadvantages. It does not require estimating any kind of Q-function, thereby sidestepping
+TD methods altogether. It also does not face the risk of distribution-shift as generative models are
+trained with maximum-likelihood estimation.
+2.2 D IFFUSION PROBABILISTIC MODELS
+Diffusion models (Sohl-Dickstein et al., 2015; Ho et al., 2020) are a specific type of generative model
+that learn the data distribution q(x)from a dataset D:={xi}0≤i<M. They have been used most
+notably for synthesizing high-quality images from text descriptions (Saharia et al., 2022; Nichol et al.,
+2021). Here, the data-generating procedure is modelled with a predefined forward noising process
+q(xk+1|xk):=N(xk+1;√αkxk,(1−αk)I)and a trainable reverse process pθ(xk−1|xk):=
+N(xk−1|µθ(xk, k),Σk), where N(µ,Σ)denotes a Gaussian distribution with mean µand variance
+Σ,αk∈Rdetermines the variance schedule, x0:=xis a sample, x1,x2, ...,xK−1are the latents,
+andxK∼ N (0,I)for carefully chosen αkand long enough K. Starting with Gaussian noise,
+samples are then iteratively generated through a series of ”denoising” steps.
+Although a tractable variational lower-bound on logpθcan be optimized to train diffusion models,
+Ho et al. (2020) propose a simplified surrogate loss:
+Ldenoise (θ):=Ek∼[1,K],x0∼q,ϵ∼N(0,I)[||ϵ−ϵθ(xk, k)||2] (3)
+The predicted noise ϵθ(xk, k), parameterized with a deep neural network, estimates the noise ϵ∼
+N(0, I)added to the dataset sample x0to produce noisy xk. This is equivalent to predicting the
+mean of pθ(xk−1|xk)since µθ(xk, k)can be calculated as a function of ϵθ(xk, k)(Ho et al., 2020).
+Guided Diffusion Modelling the conditional data distribution q(x|y)makes it possible to generate
+samples with attributes of the label y. The equivalence between diffusion models and score-
+matching (Song et al., 2021), which shows ϵθ(xk, k)∝ ∇xklogp(xk), leads to two kinds of methods
+for conditioning: classifier-guided (Nichol & Dhariwal, 2021) and classifier-free (Ho & Salimans,
+2022). The former requires training an additional classifier pϕ(y|xk)on noisy data so that samples
+may be generated at test-time with the perturbed noise ϵθ(xk, k)−ω√1−¯αk∇xklogp(y|xk),
+where ωis referred to as the guidance scale. The latter does not separately train a classifier but
+modifies the original training setup to learn both a conditional ϵθ(xk,y, k)and an unconditional
+ϵθ(xk, k)model for the noise. The unconditional noise is represented, in practice, as the
+conditional noise ϵθ(xk,Ø, k)where a dummy value Øtakes the place of y. The perturbed noise
+ϵθ(xk, k) +ω(ϵθ(xk,y, k)−ϵθ(xk, k))is used to later generate samples.
+3 G ENERATIVE MODELING WITH THE DECISION DIFFUSER
+It is useful to solve RL from offline data, both without relying on TD-learning and without risking
+distribution-shift. To this end, we formulate sequential decision-making as the standard problem of
+3st+hat+h
+returns
+constraints
+skills
+st+2
+at+1st+1at
+st+hat+h
+st+2at+1
+st+1at
+st+hat+hst+2at+1st+1
+st
+Figure 3: Planning with Decision Diffuser. Given the current state stand conditioning, Decision Diffuser
+uses classifier-free guidance with low-temperature sampling to generate a sequence of future states. It then uses
+inverse dynamics to extract and execute the action atthat leads to the immediate future state st+1.
+conditional generative modeling:
+max
+θEτ∼D[logpθ(x0(τ)|y(τ))] (4)
+Our goal is to estimate the conditional data distribution with pθso we can later generate portions of a
+trajectory x0(τ)from information y(τ)about it. Examples of ycould include the return under the
+trajectory, the constraints satisfied by the trajectory, or the skill demonstrated in the trajectory. We
+construct our generative model according to the conditional diffusion process:
+q(xk+1(τ)|xk(τ)), p θ(xk−1(τ)|xk(τ),y(τ)) (5)
+As usual, qrepresents the forward noising process while pθthe reverse denoising process. In the
+following, we discuss how we may use diffusion for decision making. First, we discuss the modeling
+choices for diffusion in Section 3.1. Next, we discuss how we may utilize classifier-free guidance to
+capture the best aspects of trajectories in Section 3.2. We then discuss the different behaviors that
+may be implemented with conditional diffusion models in Section 3.3. Finally, we discuss practical
+training details of our approach in Section 3.4.
+3.1 D IFFUSING OVER STATES
+In images, the diffusion process is applied across all pixel values in an image. Na ¨ıvely, it would
+therefore be natural to apply a similar process to model the state and actions of a trajectory. However,
+in the reinforcement learning setting, directly modeling actions using a diffusion process has several
+practical issues. First, while states are typically continuous in nature in RL, actions are more varied,
+and are often discrete in nature. Furthermore, sequences over actions, which are often represented as
+joint torques, tend to be more high-frequency and less smooth, making them much harder to predict
+and model (Tedrake, 2022). Due to these practical issues, we choose to diffuse only over states, as
+defined below:
+xk(τ):= (st, st+1, ..., s t+H−1)k (6)
+Here, kdenotes the timestep in the forward process and tdenotes the time at which a state was visited
+in trajectory τ. Moving forward, we will view xk(τ)as a noisy sequence of states from a trajectory
+of length H. We represent xk(τ)as a two-dimensional array with one column for each timestep of
+the sequence.
+Acting with Inverse-Dynamics. Sampling states from a diffusion model is not enough for defining
+a controller. A policy can, however, be inferred from estimating the action atthat led the state stto
+st+1for any timestep tinx0(τ). Given two consecutive states, we generate an action according to
+the inverse dynamics model (Agrawal et al., 2016; Pathak et al., 2018):
+at:=fϕ(st, st+1) (7)
+Note that the same offline data used to train the reverse process pθcan also be used to learn fϕ. We
+illustrate in Table 2 how the design choice of directly diffusing state distributions, with an inverse
+dynamics model to predict action, significantly improves performance over diffusing across both
+states and actions jointly. Furthermore, we empirically compare and analyze when to use inverse
+dynamics and when to diffuse over actions in Appendix F.
+43.2 P LANNING WITH CLASSIFIER -FREE GUIDANCE
+Given a diffusion model representing the different trajectories in a dataset, we next discuss how
+we may utilize the diffusion model for planning. To use the model for planning, it is necessary
+to additionally condition the diffusion process on characteristics y(τ). One approach could be to
+train a classifier pϕ(y(τ)|xk(τ))to predict y(τ)from noisy trajectories xk(τ). In the case that y(τ)
+represents the return under a trajectory, this would require estimating a Q-function, which requires a
+separate, complex dynamic programming procedure.
+One approach to avoid dynamic programming is to directly train a conditional diffusion model
+conditioned on the returns y(τ)in the offline dataset. However, as our dataset consists of a set
+of sub-optimal trajectories, the conditional diffusion model will be polluted by such sub-optimal
+behaviors. To circumvent this issue, we utilize classifier-free guidance (Ho & Salimans, 2022) with
+low-temperature sampling, to extract high-likelihood trajectories in the dataset. We find that such
+trajectories correspond to the best set of behaviors in the dataset. For a detailed discussion comparing
+Q-function guidance and classifier-free guidance, please refer to Appendix K. Formally, to implement
+classifier free guidance, a x0(τ)is sampled by starting with Gaussian noise xK(τ)and refining
+xk(τ)intoxk−1(τ)at each intermediate timestep with the perturbed noise:
+ˆϵ:=ϵθ(xk(τ),Ø, k) +ω(ϵθ(xk(τ),y(τ), k)−ϵθ(xk(τ),Ø, k)), (8)
+where the scalar ωapplied to (ϵθ(xk(τ),y(τ), k)−ϵθ(xk(τ),Ø, k))seeks to augment and extract
+the best portions of trajectories in the dataset that exhibit y(τ). With these ingredients, sampling from
+the Decision Diffuser becomes similar to planning in RL. First, we observe a state in the environment.
+Next, we sample states later into the horizon with our diffusion process conditioned on yand history
+of last Cstates observed. Finally, we identify the action that should be taken to reach the most
+immediate predicted state with our inverse dynamics model. This procedure repeats in a standard
+receding-horizon control loop described in Algorithm 1 and visualized in Figure 3.
+3.3 C ONDITIONING BEYOND RETURNS
+So far we have not explicitly defined the conditioning variable y(τ). Though we have mentioned that
+it can be the return under a trajectory, we may also consider guiding our diffusion process towards
+sequences of states that satisfy relevant constraints or demonstrate specific behavior.
+Maximizing Returns To generate trajectories that maximize return, we condition the noise
+model on the return of a trajectory so ϵθ(xk(τ),y(τ), k):=ϵθ(xk(τ), R(τ), k). These returns are
+normalized to keep R(τ)∈[0,1]. Sampling a high return trajectory amounts to conditioning on
+R(τ) = 1 . Note that we do not make use of any Q-values, which would then require dynamic
+programming.
+Satisfying Constraints Trajectories may satisfy a variety of constraints, each represented by the
+setCi, such as reaching a specific goal, visiting states in a particular order, or avoiding parts of the
+state space. To generate trajectories satisfying a given constraint Ci, we condition the noise model on
+a one-hot encoding so that ϵθ(xk(τ),y(τ), k):=ϵθ(xk(τ), 1(τ∈ Ci), k). Although we train with
+an offline dataset in which trajectories satisfy only one of the available constraints, at inference we
+can satisfy several constraints together.
+Composing Skills A skill ican be specified from a set of demonstrations Bi. To generate
+trajectories that demonstrate a given skill, we condition the noise model on a one-hot encoding so
+thatϵθ(xk(τ),y(τ), k):=ϵθ(xk(τ), 1(τ∈ Bi), k). Although we train with individual skills, we
+may further compose these skills together during inference.
+Assuming we have learned the data distributions q(x0(τ)|y1(τ)), . . . , q (x0(τ)|yn(τ))for
+ndifferent conditioning variables, we can sample from the composed data distribution
+q(x0(τ)|y1(τ), . . . ,yn(τ))using the perturbed noise (Liu et al., 2022):
+ˆϵ:=ϵθ(xk(τ),Ø, k) +ωnX
+i=1(ϵθ(xk(τ),yi(τ), k)−ϵθ(xk(τ),Ø, k)) (9)
+This property assumes that {yi(τ)}n
+i=1are conditionally independent given the state trajectory x0(τ).
+However, we empirically observe that this assumption doesn’t have to be strictly satisfied as long as
+the composition of conditioning variables is feasible. For more detailed discussion, please refer to
+Appendix D. We use this property to compose more than one constraint or skill together at test-time.
+We also show how Decision Diffuser can avoid particular constraint or skill (NOT) in Appendix J.
+5Algorithm 1 Conditional Planning with the Decision Diffuser
+1:Input: Noise model ϵθ, inverse dynamics fϕ, guidance scale ω, history length C, condition y
+2:Initialize h←Queue (length =C),t←0 // Maintain a history of length C
+3:while not done do
+4: Observe state s;h.insert (s); Initialize xK(τ)∼ N(0, αI)
+5: fork=K . . . 1do
+6: xk(τ)[:length (h)]←h // Constrain plan to be consistent with history
+7: ˆϵ←ϵθ(xk(τ), k) +ω(ϵθ(xk(τ),y, k)−ϵθ(xk(τ), k)) // Classifier-free guidance
+8: (µk−1,Σk−1)←Denoise (xk(τ),ˆϵ)
+9: xk−1∼ N(µk−1, αΣk−1)
+10: end for
+11: Extract (st, st+1)fromx0(τ)
+12: Execute at=fϕ(st, st+1);t←t+ 1
+13:end while
+D4RL	Locomotion255075100Decision	DiffuserPerformanceD4RL	KitchenKuka	Block	Stacking
+TD-learning
+Behavior	Cloning
+Figure 4: Results Overview. Decision Diffuser performs better than both TD learning ( CQL) and Behavorial
+Cloning ( BC) across D4RL locomotion tasks, D4RL Kitchen tasks and Kuka Block Stacking tasks (single
+constraint) using only a conditional generative modeling objective. For performance metric, we use normalized
+average returns (Fu et al., 2020) for D4RL tasks (Locomotion and Kitchen) and success rate for Block Stacking.
+3.4 T RAINING THE DECISION DIFFUSER
+The Decision Diffuser, our conditional generative model for decision-making, is trained in a
+supervised manner. Given a dataset Dof trajectories, each labeled with the return it achieves,
+the constraint that it satisfies, or the skill that it demonstrates, we simultaneously train the reverse
+diffusion process pθ, parameterized through the noise model ϵθ, and the inverse dynamics model fϕ
+with the following loss:
+L(θ, ϕ):=Ek,τ∈D,β∼Bern(p)[||ϵ−ϵθ(xk(τ),(1−β)y(τ)+βØ, k)||2]+E(s,a,s′)∈D[||a−fϕ(s, s′)||2]
+For each trajectory τ, we first sample noise ϵ∼ N(0,I)and a timestep k∼ U{ 1, . . . , K }. Then, we
+construct a noisy array of states xk(τ)and finally predict the noise as ˆϵθ:=ϵθ(xk(τ),y(τ), k). Note
+that with probability pwe ignore the conditioning information and the inverse dynamics is trained
+with individual transitions rather than trajectories.
+Architecture We parameterize ϵθwith a temporal U-Net architecture, a neural network consisting
+of repeated convolutional residual blocks (Janner et al., 2022). This effectively treats a sequence of
+statesxk(τ)as an image where the height represents the dimension of a single state and the width
+denotes the length of the trajectory. We encode the conditioning information y(τ)as either a scalar
+or a one-hot vector and project it into a latent variable z∈Rhwith a multi-layer perceptron (MLP).
+When y(τ) = Ø , we zero out the entries of z. We also parameterize the inverse dynamics fϕwith an
+MLP. For implementation details, please refer to the Appendix B.
+Low-temperature Sampling In the denoising step of Algorithm 1, we compute µk−1and
+Σk−1from a noisy sequence of states and a predicted noise. We find that sampling xk−1∼
+N(µk−1, αΣk−1)where the variance is scaled by α∈[0,1)leads to better quality sequences
+(corresponding to sampling lower temperature samples). For a proper ablation study, please refer to
+Appendix C.
+4 E XPERIMENTS
+In this section, we explore the efficacy of the Decision Diffuser on a variety of decision-making tasks
+(performance illustrated in Figure 4). In particular, we evaluate (1)the ability to recover effective RL
+policies from offline data, (2)the ability to generate behavior that satisfies multiple sets of constraints,
+(3)the ability compose multiple different skills together. In addition, we empirically justify use of
+classifier-free guidance, low-temperature sampling (Appendix C), and inverse dynamics (Appendix F)
+and test the robustness of Decision Diffuser to stochastic dynamics (Appendix G).
+4.1 O FFLINE REINFORCEMENT LEARNING
+Setup We first test whether the Decision Diffuser can generate return-maximizing trajectories.
+To test this, we train a state diffusion process and inverse dynamics model on publicly available
+6D4RL datasets (Fu et al., 2020). We compare with existing offline RL methods, including model-
+free algorithms like CQL(Kumar et al., 2020) and IQL(Kostrikov et al., 2022), and model-based
+algorithms such as trajectory transformer ( TT, Janner et al. (2021)) and MoReL (Kidambi et al., 2020).
+We also compare with sequence-models like the Decision Transformer ( DT) (Chen et al. (2021) and
+diffusion models like Diffuser (Janner et al., 2022).
+Dataset Environment BC CQL IQL DT TT MOReL Diffuser DD
+Med-Expert HalfCheetah 55.2 91 .6 86 .7 86 .8 95 53.3 79 .8 90 .6±1.3
+Med-Expert Hopper 52.5 105 .4 91 .5 107 .6110.0 108.7 107 .2 111.8 ±1.8
+Med-Expert Walker2d 107.5 108.8 109.6 108.1 101.9 95.6 108.4 108.8 ±1.7
+Medium HalfCheetah 42.6 44 .0 47 .4 42 .6 46 .9 42 .1 44 .2 49.1±1.0
+Medium Hopper 52.9 58 .5 66 .3 67 .6 61 .195.4 58.5 79 .3±3.6
+Medium Walker2d 75.3 72 .5 78 .3 74 .0 79 77 .8 79 .7 82.5±1.4
+Med-Replay HalfCheetah 36.645.5 44.2 36.6 41 .9 40 .2 42 .2 39 .3±4.1
+Med-Replay Hopper 18.1 95 94 .7 82 .7 91 .5 93 .6 96 .8 100±0.7
+Med-Replay Walker2d 26.0 77 .2 73 .9 66 .682.6 49.8 61 .2 75 ±4.3
+Average 51.9 77.6 77 74.7 78.9 72.9 75.3 81.8
+Mixed Kitchen 51.5 52 .4 51 - - - - 65±2.8
+Partial Kitchen 38 50 .1 46 .3 - - - - 57±2.5
+Average 44.8 51.2 48.7 - - - - 61
+Table 1: Offline Reinforcement Learning Performance. We show that Decision Diffuser ( DD) either matches
+or outperforms current offline RL approaches on D4RL tasks in terms of normalized average returns (Fu et al.,
+2020). We report the mean and the standard error over 5 random seeds.
+Results Across different offline RL tasks, we find that the Decision Diffuser is either competitive or
+outperforms many offline RL baselines (Table 1). It also outperforms Diffuser and sequence modeling
+approaches, such as Decision Transformer and Trajectory Transformer. The difference between
+Decision Diffuser and other methods becomes even more significant on harder D4RL Kitchen tasks
+which require long-term credit assignment.
+To convey the importance of classifier-free guidance, we also compare with the baseline
+CondDiffuser , which diffuses over both state and action sequences as in Diffuser without classifier-
+guidance. In Table 2, we observe that CondDiffuser improves over Diffuser in 2out of 3
+environments. Decision Diffuser further improves over CondDiffuser , performing better across all
+3environments. We conclude that learning the inverse dynamics is a good alternative to diffusing
+over actions. We further empirically analyze when to use inverse dynamics and when to diffuse
+over actions in Appendix F. We also compare against CondMLPDiffuser , a policy where the current
+action is denoised according to a diffusion process conditioned on both the state and return. We see
+thatCondMLPDiffuser performs the worst amongst diffusion models. Till now, we mainly tested on
+offline RL tasks that have deterministic (or near deterministic) environment dynamics. Hence, we
+test the robustness of Decision Diffuser to stochastic dynamics and compare it to Diffuser and CQLas
+we vary the stochasticity in environment dynamics, in Appendix G. Finally, we analyze the runtime
+characteristics of Decision Diffuser in Appendix E.
+4.2 C ONSTRAINT SATISFACTION
+Setup We next evaluate how well we can generate trajectories that satisfy a set of constraints using
+the Kuka Block Stacking environment (Janner et al., 2022) visualized in Figure 5. In this domain,
+there are four blocks which can be stacked as a single tower or rearranged into several towers. A
+constraint like BlockHeight (i)>BlockHeight (j)requires that block ibe placed above block
+j. We train the Decision Diffuser from 10,000expert demonstrations each satisfying one of these
+constraints. We randomize the positions of these blocks and consider two tasks at inference: sampling
+trajectories that satisfy a single constraint seen before in the dataset or satisfy a group of constraints
+for which demonstrations were never provided. In the latter, we ask the Decision Diffuser to generate
+trajectories so BlockHeight (i)>BlockHeight (j)>BlockHeight (k)for three of the four
+blocks i, j, k . For more details, please refer to Appendix H.
+Results In both the stacking and rearrangement settings, Decision Diffuser satisfies single
+constraints with greater success rate than Diffuser (Table 3). We also compare with BCQ(Fujimoto
+et al., 2019) and CQL(Kumar et al., 2020), but they consistently fail to stack or rearrange the blocks
+leading to a 0.0success rate. Unlike these baselines, our method can just as effectively satisfy several
+constraints together according to Equation 9. For a visualization of these generated trajectories,
+please see the website https://anuragajay.github.io/decision-diffuser/.
+7Hopper -* Diffuser CondDiffuser CondMLPDiffuser Decision Diffuser
+Med-Expert 107.6 111.3 105.6 111.8 ±1.6
+Medium 58.5 66 .3 54 .1 79.3±3.6
+Med-Replay 96.8 76 .5 66 .5 100±0.7
+Table 2: Ablations. Using classifier-free guidance with Diffuser, resulting in CondDiffuser , improves
+performance in 2(out of 3) environments. Additionally, using inverse dynamics for action prediction in Decision
+Diffuser improves performance in all 3environments. CondMLPDiffuser , that diffuses over current action
+given the current state and the target return, doesn’t perform as well.
+Figure 5: Kuka Block
+Stacking task.Environment Diffuser DD
+Single Constraint - Stacking 45.6±3.158.0±3.1
+Single Constraint - Rearrangement 58.9±3.462.7±3.1
+Single Constraint Average 52.3 60.4
+Multiple Constraints - Stacking - 60.3±3.1
+Multiple Constraints - Rearrangement - 67.2±3.1
+Multiple Constraints Average -63.8
+Table 3: Block Stacking through Constraint Minimization. Decision
+Diffuser ( DD) improves over Diffuser in terms of the success rate of
+generating trajectories satisfying a set of block-stacking constraints. It
+can also flexibly combine multiple constraints during test time. We report
+the mean success rate and the standard error over 5 random seeds.
+4.3 S KILL COMPOSITION
+Setup Finally, we look at how to compose different skills together. We consider the Unitree-go-
+running environment (Margolis & Agrawal, 2022), where a quadruped robot can be found running
+with various gaits, like bounding, pacing, and trotting. We explore if it is possible to generate
+trajectories that transition between these gaits after only training on individual gaits. For each gait,
+we collect a dataset of 2500 demonstrations on which we train Decision Diffuser.
+Results During testing, we use the noise model of our reverse diffusion process according to
+equation 9 to sample trajectories of the quadruped robot with entirely new running behavior. Figure 6
+shows a trajectory that begins with bounding but ends with pacing. Appendix I provides additional
+visualizations of running gaits being composed together. Although it visually appears that trajectories
+generated with the Decision Diffuser contain more than one gait, we would like to quantify exactly
+how well different gaits can be composed. To this end, we train a classifier to predict at every
+time-step or frame in a trajectory the running gait of the quadruped (i.e. bound, pace, or trott). We
+reuse the demonstrations collected for training the Decision Diffuser to also train this classifier, where
+our inputs are defined as robot joint states over a fixed period of time (i.e. state sub-sequences of
+length 10) and the label is the gait demonstrated in this sequence. The complete details of our gait
+classification procedure can be found in Appendix I.
+TrottGait	ProbabilityOnly	BoundOnly	PaceBound	+	Pace
+50100150200
+50100150200
+50100150200.20.40.60.80
+Pace
+Bound
+Condition Trott Pace Bound
+Only Bound 0.8 1.0 98.2
+Only Pace 1.4 97.7 0.9
+Bound + Pace 1.4 38.5 60.1
+Figure 7: Classifying Running Gaits. A classifier predicts the running gait of the quadruped at every timestep.
+On trajectories generated by conditioning on a single skill, like only bounding or pacing, the classifier predicts
+the respective gait with largest probability. When conditioned on both skills, some timesteps are classified as
+bounding while others as pacing.
+We use our running gait classifier in two ways: to evaluate how the behavior of the quadruped changes
+over the course of a single, generated trajectory and to measure how often each gait emerges over
+several generated trajectories. In the former, we first sample three trajectories from the Decision
+Diffuser conditioned either on the bounding gait, the pacing gait, or both. For every trajectory, we
+separately plot the classification probability of each gait over the length of the sequence. As shown in
+the plots of Figure 7, the classifier predicts bound and pace respectively to be the most likely running
+gait in trajectories sampled with this condition. When the trajectory is generated by conditioning
+on both gaits, the classifier transitions between predicting one gait with largest probability to the
+8BoundPaceBound	+	Pace
+	
+Figure 6: Composing Movement Skills. Decision Diffuser can imitate individual running gaits using expert
+demonstrations and compose multiple different skills together during test time. The results are best illustrated by
+videos viewable at https://anuragajay.github.io/decision-diffuser/.
+other. In fact, there are several instances where the behavior of the quadruped switches between
+bounding and pacing according to the classifier. This is consistent with the visualizations reported in
+Figure 6. In the table depicted in Figure 7, we consider 1000 trajectories generated with the Decision
+Diffuser when conditioned on one or both of the gaits as listed. We record the fraction of time that the
+quadruped’s running gait was classified as either trott, pace, or bound. It turns out that the classifier
+identifies the behavior as bounding for 38.5%of the time and as pacing for the other 60.1%when
+trajectories are sampled by composing both gaits. This corroborates the fact that the Decision Diffuser
+can indeed compose running behaviors despite only being trained on individual gaits.
+5 R ELATED WORK
+Diffusion Models Diffusion Models is proficient in learning generative models of image and text
+data (Saharia et al., 2022; Nichol et al., 2021; Nichol & Dhariwal, 2021). It formulates the data
+sampling process as an iterative denoising procedure (Sohl-Dickstein et al., 2015; Ho et al., 2020).
+The denoising procedure can be alternatively interpreted as parameterizing the gradients of the data
+distribution (Song et al., 2021) optimizing the score matching objective (Hyv ¨arinen, 2005) and thus
+as a Energy-Based Model (Du & Mordatch, 2019; Nijkamp et al., 2019; Grathwohl et al., 2020).
+To generate data samples (eg: images) conditioned on some additional information (eg:text), prior
+works (Nichol & Dhariwal, 2021) have learned a classifier to facilitate the conditional sampling.
+More recent works (Ho & Salimans, 2022) have argued to leverage gradients of an implicit classifier,
+formed by the difference in score functions of a conditional and an unconditional model, to facilitate
+conditional sampling. The resulting classifier-free guidance has been shown to generate better
+conditional samples than classifier-based guidance. Recent works have also used diffusion models to
+imitate human behavior (Pearce et al., 2023) and to parameterize policy in offline RL (Wang et al.,
+2022). Janner et al. (2022) generate trajectories consisting of states and actions with an unconditional
+diffusion model, therefore requiring a trained reward function on noisy state-action pairs. At inference,
+the estimated reward function guides the reverse diffusion process towards samples of high-return
+trajectories. In contrast, we do not train reward functions or diffusion processes separately, but rather
+model the trajectories in our dataset with a single, conditional generative model. This ensures that the
+sampling procedure of the learned diffusion process is the same at inference as it is during training.
+Reward Conditioned Policies Prior works (Kumar et al., 2019; Schmidhuber, 2019; Emmons
+et al., 2021; Chen et al., 2021) have studied learning of reward conditioned policies via reward
+conditioned behavioral cloning. Chen et al. (2021) used a transformer (Vaswani et al., 2017) to model
+the reward conditioned policies and obtained a performance competitive with offline RL approaches.
+Emmons et al. (2021) obtained similar performance as Chen et al. (2021) without using a transformer
+policy but relied on careful capacity tuning of MLP policy. In contrast, Decision Diffuser can also
+model constraints or skills and their resulting compositions.
+6 D ISCUSSION
+We propose Decision Diffuser, a conditional generative model for sequential decision making. It
+frames offline sequential decision making as conditional generative modeling and sidesteps the need
+of reinforcement learning, thereby making the decision making pipeline simpler. By sampling for
+high returns, it is able to capture the best behaviors in the dataset and outperforms existing offline
+RL approaches on standard D4RL benchmarks. In addition to returns, it can also be conditioned
+on constraints or skills and can generate novel behaviors by flexibly combining constraints or
+composing skills during test time. In this work, we focused on offline sequential decision making,
+thus circumventing the need for exploration. Using ideas from Zheng et al. (2022), future works
+could look into online fine-tuning of Decision Diffuser by leveraging entropy of the state-sequence
+model for exploration. While our work focused on state based environments, it can be extended
+to image based environments by performing the diffusion in latent space, rather than observation
+space, as done in Rombach et al. (2022). For a detailed discussion on limitations of Decision Diffuser,
+please refer to Appendix L.
+9ACKNOWLEDGEMENTS
+The authors would like to thank Ofir Nachum, Anthony Simeonov and Richard Li for their helpful
+feedback on an earlier draft of the work; Jay Whang and Ge Yang for discussions on classifier-
+free guidance; Gabe Margolis for helping with unitree experiments; Micheal Janner for providing
+visualization code for Kuka block stacking; and the members of Improbable AI Lab for discussions
+and helpful feedback. We thank MIT Supercloud and the Lincoln Laboratory Supercomputing Center
+for providing compute resources. This research was supported by an NSF graduate fellowship, a
+DARPA Machine Common Sense grant, a MURI grant, an MIT-IBM grant, and ARO W911NF-21-1-
+0097.
+This research was also partly sponsored by the United States Air Force Research Laboratory and the
+United States Air Force Artificial Intelligence Accelerator and was accomplished under Cooperative
+Agreement Number FA8750-19- 2-1000. The views and conclusions contained in this document
+are those of the authors and should not be interpreted as representing the official policies, either
+expressed or implied, of the United States Air Force or the U.S. Government. The U.S. Government
+is authorized to reproduce and distribute reprints for Government purposes, notwithstanding any
+copyright notation herein.
+AUTHOR CONTRIBUTIONS
+Anurag Ajay conceived the framework of viewing decision-making as conditional diffusion
+generative modeling, implemented the Decision Diffuser algorithm, ran experiments on Offline
+RL and Skill Composition, and helped in paper writing.
+Yilun Du helped in conceiving the framework of viewing decision-making as conditional diffusion
+generative modeling, ran experiments on Constraint Satisfaction, helped in paper writing and advised
+Anurag.
+Abhi Gupta helped in running experiments on Offline RL and Skill Composition, participated in
+research discussions, and played the leading role in paper writing and making figures.
+Joshua Tenenbaum participated in research discussions.
+Tommi Jaakkola participated in research discussions and suggested the experiment of classifying
+running gaits.
+Pulkit Agrawal was involved in research discussions, suggested experiments related to dynamic
+programming, provided feedback on writing, positioning of the work, and overall advising.
