@@ -1,0 +1,49 @@
+title,published,modified,pdfUrl,conference
+Rerender A Video: Zero-Shot Text-Guided Video-to-Video Translation,13 Jun 2023,13 Jun 2023,https://arxiv.org/pdf/2306.07954
+Image Captioners Are Scalable Vision Learners Too,13 Jun 2023,13 Jun 2023,https://arxiv.org/pdf/2306.07915
+FasterViT: Fast Vision Transformers with Hierarchical Attention,9 Jun 2023,9 Jun 2023,https://arxiv.org/pdf/2306.06189
+Controlling Text-to-Image Diffusion by Orthogonal Finetuning,12 Jun 2023,12 Jun 2023,https://arxiv.org/pdf/2306.07280
+Face0: Instantaneously Conditioning a Text-to-Image Model on a Face,11 Jun 2023,11 Jun 2023,https://arxiv.org/pdf/2306.06638
+Scalable 3D Captioning with Pretrained Models,12 Jun 2023,12 Jun 2023,https://arxiv.org/pdf/2306.07279
+BOOT: Data-free Distillation of Denoising Diffusion Models with Bootstrapping,8 Jun 2023,8 Jun 2023,https://arxiv.org/pdf/2306.05544
+GANeRF: Leveraging Discriminators to Optimize Neural Radiance Fields,9 Jun 2023,9 Jun 2023,https://arxiv.org/pdf/2306.06044
+Self-Supervised Learning from Images with a Joint-Embedding Predictive Architecture,19 Jan 2023,13 Apr 2023,https://arxiv.org/pdf/2301.08243,CVPR 2023
+Distilling Self-Supervised Vision Transformersfor Weakly-Supervised Few-Shot Classification & Segmentation,June 5, 2023,June 5, 2023,https://openaccess.thecvf.com/content/CVPR2023/papers/Kang_Distilling_Self-Supervised_Vision_Transformers_for_Weakly-Supervised_Few-Shot_Classification__Segmentation_CVPR_2023_paper.pdf,CVPR 2023
+ImageBind: One Embedding Space To Bind Them All,9 May 2023,31 May 2023,https://arxiv.org/pdf/2305.05665,CVPR 2023
+Segment Anything,5 Apr 2023,5 Apr 2023,https://arxiv.org/pdf/2304.02643
+On the Benefits of 3D Pose and Tracking for Human Action Recognition,3 Apr 2023,3 Apr 2023,https://arxiv.org/pdf/2304.01199,CVPR 2023
+DINOv2: Learning Robust Visual Features without Supervision,14 Apr 2023,14 Apr 2023,https://arxiv.org/pdf/2304.07193
+DeiT III: Revenge of the ViT,14 Apr 2022,14 Apr 2022,https://arxiv.org/pdf/2204.07118,ECCV
+Point-E: A System for Generating 3D Point Clouds from Complex Prompts,16 Dec 2022,16 Dec 2022,https://arxiv.org/pdf/2212.08751
+Hierarchical Text-Conditional Image Generation with CLIP Latents,13 Apr 2022,13 Apr 2022,https://arxiv.org/pdf/2204.06125
+High-Resolution Image Synthesis with Latent Diffusion Models,20 Dec 2021,13 Apr 2022,https://arxiv.org/pdf/2112.10752,CVPR 2022
+The Hidden Language of Diffusion Models,1 Jun 2023,6 Jun 2023,https://arxiv.org/pdf/2306.00966
+StyleDrop: Text-to-Image Generation in Any Style,1 Jun 2023,1 Jun 2023,https://arxiv.org/pdf/2306.00983
+Control4D: Dynamic Portrait Editing by Learning 4D GAN from 2D Diffusion-based Editor,31 May 2023,31 May 2023,https://arxiv.org/pdf/2305.20082
+Humans in 4D: Reconstructing and Tracking Humans with Transformers,31 May 2023,31 May 2023,https://arxiv.org/pdf/2305.20091
+High-Fidelity Image Compression with Score-based Generative Models,26 May 2023,26 May 2023,https://arxiv.org/pdf/2305.18231
+ControlVideo: Adding Conditional Control for One Shot Text-to-Video Editing,26 May 2023,26 May 2023,https://arxiv.org/pdf/2305.17098
+Break-A-Scene: Extracting Multiple Concepts from a Single Image,25 May 2023,25 May 2023,https://arxiv.org/pdf/2305.16311
+Manifold Diffusion Fields,24 May 2023,24 May 2023,https://arxiv.org/pdf/2305.15586
+Custom-Edit: Text-Guided Image Editing with Customized Diffusion Models,25 May 2023,25 May 2023,https://arxiv.org/pdf/2305.15779
+ProlificDreamer: High-Fidelity and Diverse Text-to-3D Generation with Variational Score Distillation,25 May 2023,25 May 2023,https://arxiv.org/pdf/2305.16213
+Control-A-Video: Controllable Text-to-Video Generation with Diffusion Models,23 May 2023,23 May 2023,https://arxiv.org/pdf/2305.13840
+Perception Test: A Diagnostic Benchmark for Multimodal Video Models,23 May 2023,23 May 2023,https://arxiv.org/pdf/2305.13786
+Training Diffusion Models with Reinforcement Learning,22 May 2023,23 May 2023,https://arxiv.org/pdf/2305.13301
+FitMe: Deep Photorealistic 3D Morphable Model Avatars,16 May 2023,16 May 2023,https://arxiv.org/pdf/2305.09641,CVPR 2023
+Understanding 3D Object Interaction from a Single Image,16 May 2023,16 May 2023,https://arxiv.org/pdf/2305.09664
+AutoRecon: Automated 3D Object Discovery and Reconstruction,15 May 2023,15 May 2023,https://arxiv.org/pdf/2305.08810
+DeepFusion: Lidar-Camera Deep Fusion for Multi-Modal 3D Object Detection,15 Mar 2022,15 Mar 2022,https://arxiv.org/pdf/2203.08195,CVPR 2022
+Revisiting Multi-Scale Feature Fusion for Semantic Segmentation,23 Mar 2022,14 Jun 2022,https://arxiv.org/pdf/2203.12683
+Semantic 3D-aware Portrait Synthesis and Manipulation Based on Compositional Neural Radiance Field,3 Feb 2023,10 Apr 2023,https://arxiv.org/pdf/2302.01579,AAAI 2023 Oral
+ULIP-2: Towards Scalable Multimodal Pre-training for 3D Understanding,14 May 2023,18 May 2023,https://arxiv.org/pdf/2305.08275
+HumanRF: High-Fidelity Neural Radiance Fields for Humans in Motion,10 May 2023,11 May 2023,https://arxiv.org/pdf/2305.06356
+Generative AI meets 3D: A Survey on Text-to-3D in AIGC Era,10 May 2023,27 May 2023,https://arxiv.org/pdf/2305.06131
+Sketching the Future (STF): Applying Conditional Control Techniques to Text-to-Video Models,10 May 2023,10 May 2023,https://arxiv.org/pdf/2305.05845
+NerfAcc: Efficient Sampling Accelerates NeRFs,8 May 2023,8 May 2023,https://arxiv.org/pdf/2305.04966
+Multi-Space Neural Radiance Fields,7 May 2023,7 May 2023,https://arxiv.org/pdf/2305.04268,CVPR 2023
+NeuralEditor: Editing Neural Radiance Fields via Manipulating Point Clouds,4 May 2023,4 May 2023,https://arxiv.org/pdf/2305.03049,CVPR 2023
+Single-Shot Implicit Morphable Faces with Consistent Texture Parameterization,4 May 2023,4 May 2023,https://arxiv.org/pdf/2305.03043,SIGGRAPH 2023
+NeRSemble: Multi-view Radiance Field Reconstruction of Human Heads,4 May 2023,4 May 2023,https://arxiv.org/pdf/2305.03027,SIGGRAPH 2023
+Tracking through Containers and Occluders in the Wild,4 May 2023,4 May 2023,https://arxiv.org/pdf/2305.03052,CVPR 2023
+TUVF: Learning Generalizable Texture UV Radiance Fields,4 May 2023,10 May 2023,https://arxiv.org/pdf/2305.03040

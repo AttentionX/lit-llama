@@ -1,0 +1,112 @@
+title,published,modified,pdfUrl,conference
+LLaMA: Open and Efficient Foundation Language Models,27 Feb 2023,27 Feb 2023,https://arxiv.org/pdf/2302.13971
+G-Eval: NLG Evaluation using GPT-4 with Better Human Alignment,29 Mar 2023,23 May 2023,https://arxiv.org/abs/2303.16634
+HuggingGPT: Solving AI Tasks with ChatGPT and its Friends in Hugging Face,30 Mar 2023,25 May 2023,https://arxiv.org/pdf/2303.17580
+Generative Agents: Interactive Simulacra of Human Behavior,7 Apr 2023,7 Apr 2023https://arxiv.org/pdf/2304.03442
+LIMA: Less Is More for Alignment,18 May 2023,18 May 2023,https://arxiv.org/pdf/2305.11206
+ReAct: Synergizing Reasoning and Acting in Language Models,6 Oct 2022,10 Mar 2023,https://arxiv.org/pdf/2210.03629
+LLaMA-Adapter: Efficient Fine-tuning of Language Models with Zero-init Attention,28 Mar 2023,28 Mar 2023,https://arxiv.org/pdf/2303.16199
+LLaMA-Adapter V2: Parameter-Efficient Visual Instruction Model,28 Apr 2023,28 Apr 2023,https://arxiv.org/pdf/2304.15010
+GPT-4 Technical Report,15 Mar 2023,27 Mar 2023,https://arxiv.org/pdf/2303.08774
+Gorilla: Large Language Model Connected with Massive APIs,24 May 2023,24 May 2023,https://arxiv.org/pdf/2305.15334
+Constitutional AI: Harmlessness from AI Feedback,15 Dec 2022,15 Dec 2022,https://arxiv.org/pdf/2212.08073
+Training language models to follow instructions with human feedback,4 Mar 2022,4 Mar 2022,https://arxiv.org/pdf/2203.02155
+UL2: Unifying Language Learning Paradigms,10 May 2022,28 Feb 2023,https://arxiv.org/pdf/2205.05131
+CLIPPO: Image-and-Language Understanding from Pixels Only,15 Dec 2022,1 Apr 2023,https://arxiv.org/pdf/2212.08045
+Structured Prompting: Scaling In-Context Learning to 1,000 Examples,13 Dec 2022,13 Dec 2022,https://arxiv.org/pdf/2212.06713
+A Length-Extrapolatable Transformer,20 Dec 2022,20 Dec 2022,https://arxiv.org/pdf/2212.10554
+Chain-of-Thought Prompting Elicits Reasoning in Large Language Models,28 Jan 2022,10 Jan 2023,https://arxiv.org/pdf/2201.11903
+Training Compute-Optimal Large Language Models,29 Mar 2022,29 Mar 2022,https://arxiv.org/pdf/2203.15556
+A Generalist Agent,November 10, 2022,November 10, 2022,https://openreview.net/pdf?id=1ikK0kHjvj
+Large Language Models are Zero-Shot Reasoners,24 May 2022,29 Jan 2023,https://arxiv.org/pdf/2205.11916,NeurIPS 2022
+Multimodal Contrastive Learning with LIMoE: the Language-Image Mixture of Experts,6 Jun 2022,6 Jun 2022,https://arxiv.org/pdf/2206.02770
+Emergent Abilities of Large Language Models,01 Sept 2022,01 Mar 2023,https://openreview.net/pdf?id=yzkSU5zdwD,TMLR 2023
+Scaling Instruction-Finetuned Language Models,20 Oct 2022,6 Dec 2022,https://arxiv.org/pdf/2210.11416
+Transcending Scaling Laws with 0.1% Extra Compute,20 Oct 2022,6 Nov 2022,https://arxiv.org/pdf/2210.11399
+One-for-All: Generalized LoRA for Parameter-Efficient Fine-tuning,13 Jun 2023,13 Jun 2023,https://arxiv.org/pdf/2306.07967
+WebGLM: Towards An Efficient Web-Enhanced Question Answering System with Human Preferences,13 Jun 2023,13 Jun 2023,https://arxiv.org/pdf/2306.07906,KDD 2023
+TART: A plug-and-play Transformer module for task-agnostic reasoning,13 Jun 2023,13 Jun 2023,https://arxiv.org/pdf/2306.07536
+ATT3D: Amortized Text-to-3D Object Synthesis,6 Jun 2023,6 Jun 2023,https://arxiv.org/pdf/2306.07349
+Benchmarking Neural Network Training Algorithms,12 Jun 2023,12 Jun 2023,https://arxiv.org/pdf/2306.07179
+Augmenting Language Models with Long-Term Memory,12 Jun 2023,12 Jun 2023,https://arxiv.org/pdf/2306.07174
+Mind2Web: Towards a Generalist Agent for the Web,9 Jun 2023,9 Jun 2023,https://arxiv.org/pdf/2306.06070
+Can Large Language Models Infer Causation from Correlation?,9 Jun 2023,9 Jun 2023,https://arxiv.org/pdf/2306.05836
+Judging LLM-as-a-judge with MT-Bench and Chatbot Arena,9 Jun 2023,9 Jun 2023,https://arxiv.org/pdf/2306.05685
+MatCha: Enhancing Visual Language Pretraining with Math Reasoning and Chart Derendering,19 Dec 2022,23 May 2023,https://arxiv.org/pdf/2212.09662,ACL 2023
+DePlot: One-shot visual language reasoning by plot-to-table translation,20 Dec 2022,23 May 2023,https://arxiv.org/pdf/2212.10505,ACL 2023 (Findings)
+Dynamic Planning in Open-Ended Dialogue using Reinforcement Learning,25 Jul 2022,25 Jul 2022,https://arxiv.org/pdf/2208.02294
+Larger language models do in-context learning differently,7 Mar 2023,8 Mar 2023,https://arxiv.org/pdf/2303.03846
+Spotlight: Mobile UI Understanding using Vision-Language Models with a Focus,29 Sep 2022,24 Feb 2023,https://arxiv.org/pdf/2209.14927,ICLR 2023
+Confident Adaptive Language Modeling,14 Jul 2022,25 Oct 2022,https://arxiv.org/pdf/2207.07061,NeurIPS 2022 Oral
+Scaling Speech Technology to 1,000+ Languages,22 May 2023,22 May 2023,https://arxiv.org/pdf/2305.13516
+Memorization Without Overfitting: Analyzing the Training Dynamics of Large Language Models,22 May 2022,2 Nov 2022,https://arxiv.org/pdf/2205.10770,NeurIPS 2023
+Luna: Linear Unified Nested Attention,3 Jun 2021,2 Nov 2021,https://arxiv.org/pdf/2106.01540,NeurIPS 2021
+Scaling Laws for Reward Model Overoptimization,19 Oct 2022,19 Oct 2022,https://arxiv.org/pdf/2210.10760
+Robust Speech Recognition via Large-Scale Weak Supervision,6 Dec 2022,6 Dec 2022,https://arxiv.org/pdf/2212.04356
+Evolution through Large Models,17 Jun 2022,17 Jun 2022,https://arxiv.org/pdf/2206.08896
+Text and Code Embeddings by Contrastive Pre-Training,24 Jan 2022,24 Jan 2022,https://arxiv.org/pdf/2201.10005
+Discovering Language Model Behaviors with Model-Written Evaluations,19 Dec 2022,19 Dec 2022,https://arxiv.org/pdf/2212.09251
+Orca: Progressive Learning from Complex Explanation Traces of GPT-4,5 Jun 2023,5 Jun 2023,https://arxiv.org/pdf/2306.02707
+Scaling Down to Scale Up: A Guide to Parameter-Efficient Fine-Tuning,28 Mar 2023,28 Mar 2023,https://arxiv.org/pdf/2303.15647
+Blockwise Parallel Transformer for Long Context Large Models,30 May 2023,30 May 2023,https://arxiv.org/pdf/2305.19370
+Improving CLIP Training with Language Rewrites,31 May 2023,31 May 2023,https://arxiv.org/pdf/2305.20088
+Fine-Tuning Language Models with Just Forward Passes,27 May 2023,27 May 2023,https://arxiv.org/pdf/2305.17333
+Generating Images with Multimodal Language Models,6 May 2023,6 May 2023,https://arxiv.org/pdf/2305.17216
+Randomized Positional Encodings Boost Length Generalization of Transformers,26 May 2023,26 May 2023,https://arxiv.org/pdf/2305.16843
+A Closer Look at In-Context Learning under Distribution Shifts,26 May 2023,26 May 2023,https://arxiv.org/pdf/2305.16704
+Training Socially Aligned Language Models in Simulated Human Society,26 May 2023,26 May 2023,https://arxiv.org/pdf/2305.16960
+Scan and Snap: Understanding Training Dynamics and Token Composition in 1-layer Transformer,25 May 2023,4 Jun 2023,https://arxiv.org/pdf/2305.16380
+LLMs as Factual Reasoners: Insights from Existing Benchmarks and Beyond,23 May 2023,23 May 2023,https://arxiv.org/pdf/2305.14540
+Leveraging GPT-4 for Automatic Translation Post-Editing,24 May 2023,24 May 2023,https://arxiv.org/pdf/2305.14878
+Is GPT-4 a Good Data Analyst?,24 May 2023,24 May 2023,https://arxiv.org/pdf/2305.15038
+QLoRA: Efficient Finetuning of Quantized LLMs,23 May 2023,23 May 2023,https://arxiv.org/pdf/2305.14314
+How Language Model Hallucinations Can Snowball,22 May 2023,22 May 2023,https://arxiv.org/pdf/2305.13534
+Aligning Large Language Models through Synthetic Feedback,23 May 2023,23 May 2023,https://arxiv.org/pdf/2305.13735
+Textually Pretrained Speech Language Models,22 May 2023,22 May 2023,https://arxiv.org/pdf/2305.13009
+Augmenting Autotelic Agents with Large Language Models,21 May 2023,21 May 2023,https://arxiv.org/pdf/2305.12487
+CodeCompose: A Large-Scale Industrial Deployment of AI-assisted Code Authoring,20 May 2023,20 May 2023,https://arxiv.org/pdf/2305.12050
+OPT-R: Exploring the Role of Explanations in Finetuning and Prompting for Reasoning Skills of Large Language Models,19 May 2023,19 May 2023,https://arxiv.org/pdf/2305.12001
+How Does Generative Retrieval Scale to Millions of Passages?,19 May 2023,19 May 2023,https://arxiv.org/pdf/2305.11841
+PaLM 2 Technical Report,17 May 2023,17 May 2023,https://arxiv.org/pdf/2305.10403
+Improved baselines for vision-language pre-training,15 May 2023,15 May 2023,https://arxiv.org/pdf/2305.08675
+Interpretability at Scale: Identifying Causal Mechanisms in Alpaca,15 May 2023,15 May 2023,https://arxiv.org/pdf/2305.08809
+Symbol tuning improves in-context learning in language models,15 May 2023,15 May 2023,https://arxiv.org/pdf/2305.08298
+DoReMi: Optimizing Data Mixtures Speeds Up Language Model Pretraining,17 May 2023,24 May 2023,https://arxiv.org/pdf/2305.10429
+Noise2Music: Text-conditioned Music Generation with Diffusion Models,8 Feb 2023,6 Mar 2023,https://arxiv.org/pdf/2302.03917
+The Flan Collection: Designing Data and Methods for Effective Instruction Tuning,31 Jan 2023,14 Feb 2023,https://arxiv.org/pdf/2301.13688
+Inverse scaling can become U-shaped,3 Nov 2022,24 May 2023,https://arxiv.org/pdf/2211.02011
+Challenging BIG-Bench Tasks and Whether Chain-of-Thought Can Solve Them,17 Oct 2022,17 Oct 2022,https://arxiv.org/pdf/2210.09261
+GLaM: Efficient Scaling of Language Models with Mixture-of-Experts,13 Dec 2021,1 Aug 2022,https://arxiv.org/pdf/2112.06905,ICML 2022
+Transformer Quality in Linear Time,21 Feb 2022,27 Jun 2022,https://arxiv.org/pdf/2202.10447,ICML 2022
+Large Language Models as Tool Makers,26 May 2023,26 May 2023,https://arxiv.org/pdf/2305.17126
+Sophia: A Scalable Stochastic Second-order Optimizer for Language Model Pre-training,23 May 2023,23 May 2023,https://arxiv.org/pdf/2305.14342
+Data Selection for Language Models via Importance Resampling,6 Feb 2023,6 Feb 2023,https://arxiv.org/pdf/2302.03169
+Reward Design with Language Models,27 Feb 2023,27 Feb 2023,https://arxiv.org/pdf/2303.00001,ICLR 2023
+Holistic Evaluation of Language Models,16 Nov 2022,16 Nov 2022,https://arxiv.org/pdf/2211.09110
+Multimodal Learning Without Labeled Multimodal Data: Guarantees and Applications,7 Jun 2023,7 Jun 2023,https://arxiv.org/pdf/2306.04539
+AlpacaFarm: A Simulation Framework for Methods that Learn from Human Feedback,22 May 2023,22 May 2023,https://arxiv.org/pdf/2305.14387
+PRODIGY: Enabling In-context Learning Over Graphs,21 May 2023,21 May 2023,https://arxiv.org/pdf/2305.12600
+Evaluating Verifiability in Generative Search Engines,19 Apr 2023,19 Apr 2023,https://arxiv.org/pdf/2304.09848
+Learning without Forgetting for Vision-Language Models,30 May 2023,30 May 2023,https://arxiv.org/pdf/2305.19270
+Flan-MoE: Scaling Instruction-Finetuned Language Models with Sparse Mixture of Experts,24 May 2023,24 May 2023,https://arxiv.org/pdf/2305.14705
+CodeT5+: Open Code Large Language Models for Code Understanding and Generation,13 May 2023,20 May 2023,https://arxiv.org/pdf/2305.07922
+RL4F: Generating Natural Language Feedback with Reinforcement Learning for Repairing Model Outputs,5 May 2023,5 May 2023,https://arxiv.org/pdf/2305.08844,ACL 2023
+Small Models are Valuable Plug-ins for Large Language Models,15 May 2023,15 May 2023,https://arxiv.org/pdf/2305.08848
+GPT-Sentinel: Distinguishing Human and ChatGPT Generated Content,13 May 2023,17 May 2023,https://arxiv.org/pdf/2305.07969
+TESS: Text-to-Text Self-Conditioned Simplex Diffusion,15 May 2023,15 May 2023,https://arxiv.org/pdf/2305.08379
+An Inverse Scaling Law for CLIP Training,11 May 2023,11 May 2023,https://arxiv.org/pdf/2305.07017
+LACoS-BLOOM: Low-rank Adaptation with Contrastive objective on 8 bits Siamese-BLOOM,10 May 2023,10 May 2023,https://arxiv.org/pdf/2305.06404
+InstructBLIP: Towards General-purpose Vision-Language Models with Instruction Tuning,11 May 2023,11 May 2023,https://arxiv.org/pdf/2305.06500
+Do LLMs Understand User Preferences? Evaluating LLMs On User Rating Prediction,10 May 2023,10 May 2023,https://arxiv.org/pdf/2305.06474
+Multi-Task End-to-End Training Improves Conversational Recommendation,8 May 2023,8 May 2023,https://arxiv.org/pdf/2305.06218
+StarCoder: may the source be with you!,9 May 2023,9 May 2023,https://arxiv.org/pdf/2305.06161
+Are ChatGPT and GPT-4 General-Purpose Solvers for Financial Text Analytics? An Examination on Several Typical Tasks,10 May 2023,10 May 2023,https://arxiv.org/pdf/2305.05862
+To Compress or Not to Compress- Self-Supervised Learning and Information Theory: A Review,19 Apr 2023,4 May 2023,https://arxiv.org/pdf/2304.09355
+Recommender Systems with Generative Retrieval,8 May 2023,8 May 2023,https://arxiv.org/pdf/2305.05065
+Towards Building the Federated GPT: Federated Instruction Tuning,9 May 2023,9 May 2023,https://arxiv.org/pdf/2305.05644
+Code Execution with Pre-trained Language Models,8 May 2023,8 May 2023,https://arxiv.org/pdf/2305.05383,ACL 2023 Findings
+Vcc: Scaling Transformers to 128K Tokens or More by Prioritizing Important Tokens,7 May 2023,27 May 2023,https://arxiv.org/pdf/2305.04241
+Language Models Don't Always Say What They Think: Unfaithful Explanations in Chain-of-Thought Prompting,7 May 2023,7 May 2023,https://arxiv.org/pdf/2305.04388
+Residual Prompt Tuning: Improving Prompt Tuning with Residual Reparameterization,6 May 2023,6 May 2023,https://arxiv.org/pdf/2305.03937,ACL 2023 Findings
+Vera: A General-Purpose Plausibility Estimation Model for Commonsense Statements,5 May 2023,23 May 2023,https://arxiv.org/pdf/2305.03695
+Masked Trajectory Models for Prediction, Representation, and Control,4 May 2023,4 May 2023,https://arxiv.org/pdf/2305.02968,ICML 2023
