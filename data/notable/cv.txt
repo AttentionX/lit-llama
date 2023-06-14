@@ -47,3 +47,37 @@ Single-Shot Implicit Morphable Faces with Consistent Texture Parameterization,4 
 NeRSemble: Multi-view Radiance Field Reconstruction of Human Heads,4 May 2023,4 May 2023,https://arxiv.org/pdf/2305.03027,SIGGRAPH 2023
 Tracking through Containers and Occluders in the Wild,4 May 2023,4 May 2023,https://arxiv.org/pdf/2305.03052,CVPR 2023
 TUVF: Learning Generalizable Texture UV Radiance Fields,4 May 2023,10 May 2023,https://arxiv.org/pdf/2305.03040
+Photorealistic Text-to-Image Diffusion Models with Deep Language Understanding,23 May 2022,23 May 2022,https://arxiv.org/pdf/2205.11487
+Imagic: Text-Based Real Image Editing with Diffusion Models,17 Oct 2022,20 Mar 2023,https://arxiv.org/pdf/2210.09276
+Understanding Diffusion Models: A Unified Perspective,25 Aug 2022,25 Aug 2022,https://arxiv.org/pdf/2208.11970
+Cold Diffusion: Inverting Arbitrary Image Transforms Without Noise,19 Aug 2022,19 Aug 2022,https://arxiv.org/pdf/2208.09392
+The One Where They Reconstructed 3D Humans and Environments in TV Shows,28 Jul 2022,28 Jul 2022,https://arxiv.org/pdf/2207.14279,ECCV 2022
+Towards Grand Unification of Object Tracking,14 Jul 2022,11 Aug 2022,https://arxiv.org/pdf/2207.07078v4,ECCV 2022 Oral
+On Distillation of Guided Diffusion Models,6 Oct 2022,12 Apr 2023,https://arxiv.org/pdf/2210.03142,CVPR 2023
+Imagen Video: High Definition Video Generation with Diffusion Models,5 Oct 2022,5 Oct 2022,https://arxiv.org/pdf/2210.02303
+MADiff: Offline Multi-agent Learning with Diffusion Models,27 May 2023,27 May 2023,https://arxiv.org/pdf/2305.17330
+Parallel Sampling of Diffusion Models,25 May 2023,8 Jun 2023,https://arxiv.org/pdf/2305.16317
+UniControl: A Unified Diffusion Model for Controllable Visual Generation In the Wild,18 May 2023,25 May 2023,https://arxiv.org/pdf/2305.11147
+CSP: Self-Supervised Contrastive Spatial Pre-Training for Geospatial-Visual Representations,1 May 2023,9 May 2023,https://arxiv.org/pdf/2305.01118,ICML 2023
+Reflected Diffusion Models,10 Apr 2023,8 Jun 2023,https://arxiv.org/pdf/2304.04740,ICML 2023
+End-to-End Diffusion Latent Optimization Improves Classifier Guidance,23 Mar 2023,31 May 2023,https://arxiv.org/pdf/2303.13703
+GlueGen: Plug and Play Multi-modal Encoders for X-to-image Generation,17 Mar 2023,17 Mar 2023,https://arxiv.org/pdf/2303.10056
+Shap-E: Generating Conditional 3D Implicit Functions,3 May 2023,3 May 2023,https://arxiv.org/pdf/2305.02463
+GLIDE: Towards Photorealistic Image Generation and Editing with Text-Guided Diffusion Models,20 Dec 2021,8 Mar 2022,https://arxiv.org/pdf/2112.10741
+Diffusion Models Beat GANs on Image Synthesis,11 May 2021,1 Jun 2021,https://arxiv.org/pdf/2105.05233
+Consistency Models,2 Mar 2023,31 May 2023,https://arxiv.org/pdf/2303.01469,ICML 2023
+Probabilistic Adaptation of Text-to-Video Models,2 Jun 2023,2 Jun 2023,https://arxiv.org/pdf/2306.01872
+DPOK: Reinforcement Learning for Fine-tuning Text-to-Image Diffusion Models,25 May 2023,25 May 2023,https://arxiv.org/pdf/2305.16381
+Multi-View Masked World Models for Visual Robotic Manipulation,5 Feb 2023,31 May 2023,https://arxiv.org/pdf/2302.02408,ICML 2023
+Diffusion Self-Guidance for Controllable Image Generation,1 Jun 2023,11 Jun 2023,https://arxiv.org/pdf/2306.00986
+Learning a Diffusion Prior for NeRFs,27 Apr 2023,27 Apr 2023,https://arxiv.org/pdf/2304.14473
+DreamBooth3D: Subject-Driven Text-to-3D Generation,23 Mar 2023,27 Mar 2023,https://arxiv.org/pdf/2303.13508
+DreamBooth: Fine Tuning Text-to-Image Diffusion Models for Subject-Driven Generation,25 Aug 2022,15 Mar 2023,https://arxiv.org/pdf/2208.12242,CVPR 2023
+DreamFusion: Text-to-3D using 2D Diffusion,29 Sep 2022,29 Sep 2022,https://arxiv.org/pdf/2209.14988
+Zero-Shot Text-Guided Object Generation with Dream Fields,2 Dec 2021,4 May 2022,https://arxiv.org/pdf/2112.01455,CVPR 2022
+Autoregressive Diffusion Models,5 Oct 2021,1 Feb 2022,https://arxiv.org/pdf/2110.02037,ICLR 2022
+Score-Based Generative Modeling through Stochastic Differential Equations,26 Nov 2020,10 Feb 2021,https://arxiv.org/pdf/2011.13456,ICLR 2021 Oral
+Learning Energy-Based Models by Diffusion Recovery Likelihood,15 Dec 2020,27 Mar 2021,https://arxiv.org/pdf/2012.08125
+Understanding the Diffusion Objective as a Weighted Integral of ELBOs,1 Mar 2023,30 Mar 2023,https://arxiv.org/pdf/2303.00848
+Variational Diffusion Models,1 Jul 2021,14 Apr 2023,https://arxiv.org/pdf/2107.00630,NeurIPS 2021
+A Control-Centric Benchmark for Video Prediction,26 Apr 2023,26 Apr 2023,https://arxiv.org/pdf/2304.13723,ICLR 2023
