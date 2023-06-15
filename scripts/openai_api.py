@@ -10,7 +10,7 @@ load_dotenv()
 openai.api_key = os.environ.get('OPENAI_API_KEY')
 BACKUP_KEY = os.environ.get('OPENAI_API_KEY2')
 
-NUM_KEYS = 3
+NUM_KEYS = 1
 KEYS = []
 CURR_KEY = 0
 
@@ -22,15 +22,15 @@ for i in range(NUM_KEYS):
 
 # print(len(KEYS))
 
-def get_chunk_tokens(text, MAX_CHUNK=3000):
-    cur_len = token_count(text)
-    if cur_len > MAX_CHUNK:
-        char_length = (len(text)*MAX_CHUNK)//cur_len
+def get_chunk_tokens(text, max_tokens=3000, model='gpt-3.5-turbo'):
+    cur_len = token_count(text, model=model)
+    if cur_len > max_tokens:
+        char_length = (len(text)*max_tokens)//cur_len
         text = text[:char_length]
     return text
 
 def token_count(text:str, model='gpt-3.5-turbo'):
-    encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
+    encoding = tiktoken.encoding_for_model(model)
     num_tokens = len(encoding.encode(text))
     return num_tokens
 
@@ -38,13 +38,22 @@ def embedding(text):
     text = text.replace("\n", " ")
     return openai.Embedding.create(input = [text], model="text-embedding-ada-002")['data'][0]['embedding']
     
-def chatGPT(chat_history, system='You are a helpful assistant.', engine='gpt-3.5-turbo'):
+def chatGPT(chat_history, system='You are a helpful assistant.', engine='gpt-3.5-turbo', switch_keys=False):
     global CURR_KEY
     messages = [
         {"role": "system", "content": system},
     ]
     
     messages = messages + [{"role":"user", "content":chat_history}]
+
+    if not switch_keys:
+        response = openai.ChatCompletion.create(
+            model = engine,
+            messages = messages,
+        )
+
+        answer = response.choices[0].message.content
+        return answer
     
     i = 0
     while True:

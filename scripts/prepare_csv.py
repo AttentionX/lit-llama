@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+import asyncio
 
 # support running without installing as a package
 wd = Path(__file__).parent.parent.resolve()
@@ -20,6 +21,7 @@ import re
 import openai_api
 import paths
 import prepare_arxiv
+from custom_parallel_request import process_requests
 
 TOKENIZER_PATH = paths.TOKENIZER_PATH
 TOKENIZED_DATA_PATH = Path('data/tokenized')
@@ -46,7 +48,7 @@ def generate_questions(paper_info:list, text:str, page_num:int, reference:str=No
     answer = openai_api.chatGPT(prompt)
     return answer
 
-def generate_qa_pairs(paper_info:list, paper_text:str):
+def generate_qa_pairs(paper_info:list, paper_text:str, model='gpt-3.5-turbo-16k'):
     context = f'The following is from the paper "{paper_info[0]}" released in {paper_info[1]}'
     examples = '{"question": "When did Virgin Australia start operating?", "answer": "Virgin Australia commenced services on 31 August 2000 as Virgin Blue, with two aircraft on a single route."}\n{"question": "When was Tomoaki Komorida born?", "answer": "Tomoaki Komorida was born on July 10,1981."}\n{"question": "Who was Kyle Van Zyl playing against when he scored 36 of hisa teams 61 points?", "answer": "Kyle Van Zyl was playing against Boland U21 when he scored 36 points, leading his team to victory in a 61-3 win."}'
     instruction = f'Generate as many question-answer pairs as possible, in the following format:\n---\n{examples}\n---\n about the following information from the paper, covering all of the core topics/subjects that are crucial to understanding the paper, its methodologies, related works, domain problem and alternative methods, and its significance. Output in json format (Each line containing a json object).'
@@ -56,7 +58,7 @@ def generate_qa_pairs(paper_info:list, paper_text:str):
     3. Be comprehensive! Make sure to cover all of the essential topics of the paper including but not limited to: main contribution, problem domain, significance of the paper/method, methodology, related works, other methods/works in the domain, technical details, experiments/reseults, and every other related concepts and information that are crucial to understanding the paper, its methods, its significance, the the problem domain
     '''
     prompt = f'{context}\n\n{instruction}\n\n{rules}\n\n{paper_text}'
-    answer = openai_api.chatGPT(prompt, engine='gpt-3.5-turbo-16k')
+    answer = openai_api.chatGPT(prompt, engine=model)
     return answer
 
 def get_page_text(sections_of_pages:list, page_num:int):
@@ -94,7 +96,80 @@ def get_sections(page:str):
             j = i
     return final_sections
 
-def read_papers_from_csv(csv_path:str='data/notable/adam.txt', all_at_once=True):
+def get_qa_for_paper(paper_json:dict, save_output=True):
+    url = paper_json['url']
+    title = paper_json['title']
+    date = paper_json['date']
+    destination_path = paper_json['save_filepath']
+    out_title = paper_json['out_title']
+    model = paper_json['model']
+
+    pages = prepare_arxiv.retrieve_pdf_from_url(url)
+
+    paper_text = '\n\n'.join(pages)
+    paper_text = openai_api.get_chunk_tokens(paper_text, max_tokens=12000, model=model)
+
+    qas = generate_qa_pairs([title, date], paper_text)
+    qas = qas.split('\n')
+    qas = [json.loads(qa) for qa in qas if '}' in qa]
+
+    if save_output:
+        mode = 'w'
+        if os.path.exists(destination_path / f'{out_title}.jsonl'):
+            mode = 'a'
+        with open(destination_path / f'{out_title}.jsonl', mode) as f:
+            for obj in qas:
+                f.write(json.dumps(obj) + '\n')
+
+def process_papers_parallel(file_path:str='data/notable/adam.txt', model='gpt-3.5-turbo-16k'):
+    tasks = []
+
+    destination_path = Path('data/qa/notable')
+    with open(file_path, 'r') as f:
+        reader = csv.reader(f)
+        i = 0
+        for line in reader:
+            # print(i+1, 'th file in', file_path.split('/')[-1])
+            if len(line) >= 4:
+                url = line[3].strip()
+                date = line[1].strip()
+                title = line[0].strip()
+
+                if 'arxiv' in url and 'abs' in url:
+                    url = url.replace('abs', 'pdf')
+
+                if not url.startswith('http'):
+                    if title != 'title':
+                        print(f'Line {i+1} in {file_path.split("/")[-1]} has invalid link: {line}')
+                    i += 1
+                    continue
+                
+                clean_title = title.replace(' ', '_')
+                out_title = f'{i+1}_{clean_title}.jsonl'
+
+                save_filepath = destination_path / out_title
+                save_filepath = str(save_filepath)
+
+                paper_json = {
+                    'title': title,
+                    'date': date,
+                    'url': url,
+                    'save_filepath': save_filepath,
+                    'out_title': out_title,
+                    'model': model,
+                }
+                tasks.append(paper_json)
+            else:
+                print(f'Line {i+1} in {file_path.split("/")[-1]} is invalid: {line}')
+            i += 1
+    asyncio.run(
+        process_requests(
+            tasks=tasks,
+            engine='gpt-3.5-turbo-16k'
+        )
+    )
+
+def read_papers_from_csv(csv_path:str='data/notable/adam.txt', all_at_once=True, model='gpt-3.5-turbo-16k'):
     destination_path = Path('data/qa/notable')
     with open(csv_path, 'r') as f:
         reader = csv.reader(f)
@@ -102,27 +177,49 @@ def read_papers_from_csv(csv_path:str='data/notable/adam.txt', all_at_once=True)
         for line in reader:
             print(i+1, 'th file in', csv_path.split('/')[-1])
             if len(line) >= 4:
-                url = line[3]
-                date = line[1]
-                title = line[0]
+                url = line[3].strip()
+                date = line[1].strip()
+                title = line[0].strip()
+
+                if not url.startswith('http'):
+                    i += 1
+                    print(f'Line {i+1} in {csv_path.split("/")[-1]} has invalid link: {line}')
+                    continue
                 
                 clean_title = title.replace(' ', '_')
                 out_title = f'{i+1}_{clean_title}.jsonl'
+
+                save_filepath = destination_path / out_title
+                save_filepath = str(save_filepath)
+
+                paper_json = {
+                    'title': title,
+                    'date': date,
+                    'url': url,
+                    'save_filepath': save_filepath,
+                    'out_title': out_title,
+                    'model': model,
+                }
                 
                 if all_at_once:
-                    pages = prepare_arxiv.retrieve_pdf_from_url(url)
-                    paper_text = '\n\n'.join(pages)
-                    paper_text = openai_api.get_chunk_tokens(paper_text, max_tokens=12000)
-                    qas = generate_qa_pairs([title, date], paper_text)
-                    qas = qas.split('\n')
-                    qas = [json.loads(qa) for qa in qas if '}' in qa]
-                    mode = 'w'
-                    if os.path.exists(destination_path / f'{out_title}.jsonl'):
-                        mode = 'a'
-                    with open(destination_path / f'{out_title}.jsonl', mode) as f:
-                        for obj in qas:
-                            f.write(json.dumps(obj) + '\n')
+                    get_qa_for_paper(paper_json)
+                    
+                    # pages = prepare_arxiv.retrieve_pdf_from_url(url)
+
+                    # paper_text = '\n\n'.join(pages)
+                    # paper_text = openai_api.get_chunk_tokens(paper_text, max_tokens=12000, model=model)
+
+                    # qas = generate_qa_pairs([title, date], paper_text)
+                    # qas = qas.split('\n')
+                    # qas = [json.loads(qa) for qa in qas if '}' in qa]
+                    # mode = 'w'
+                    # if os.path.exists(destination_path / f'{out_title}.jsonl'):
+                    #     mode = 'a'
+                    # with open(destination_path / f'{out_title}.jsonl', mode) as f:
+                    #     for obj in qas:
+                    #         f.write(json.dumps(obj) + '\n')
                 else:
+                    pages = prepare_arxiv.retrieve_pdf_from_url(url)
                     pages_sections = [get_sections(page) for page in pages]
                     beginning_of_paper = pages_sections[0][:2]
                     for page in pages_sections:
@@ -143,7 +240,8 @@ def read_papers_from_csv(csv_path:str='data/notable/adam.txt', all_at_once=True)
     return True
 
 def main():
-    read_papers_from_csv()
+    process_papers_parallel()
+    # read_papers_from_csv()
 
 if __name__ == "__main__":
     main()

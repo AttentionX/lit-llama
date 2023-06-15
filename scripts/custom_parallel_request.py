@@ -102,19 +102,33 @@ import re  # for matching endpoint from request URL
 import tiktoken  # for counting tokens
 import time  # for sleeping after rate limit is hit
 from dataclasses import dataclass, field  # for storing API inputs, outputs, and metadata
+from datetime import datetime
 
 import openai_api
+import prepare_arxiv
+# from prepare_csv import generate_qa_pairs
 
+def generate_qa_pairs(paper_info:list, paper_text:str, model='gpt-3.5-turbo-16k'):
+    context = f'The following is from the paper "{paper_info[0]}" released in {paper_info[1]}'
+    examples = '{"question": "When did Virgin Australia start operating?", "answer": "Virgin Australia commenced services on 31 August 2000 as Virgin Blue, with two aircraft on a single route."}\n{"question": "When was Tomoaki Komorida born?", "answer": "Tomoaki Komorida was born on July 10,1981."}\n{"question": "Who was Kyle Van Zyl playing against when he scored 36 of hisa teams 61 points?", "answer": "Kyle Van Zyl was playing against Boland U21 when he scored 36 points, leading his team to victory in a 61-3 win."}'
+    instruction = f'Generate as many question-answer pairs as possible, in the following format:\n---\n{examples}\n---\n about the following information from the paper, covering all of the core topics/subjects that are crucial to understanding the paper, its methodologies, related works, domain problem and alternative methods, and its significance. Output in json format (Each line containing a json object).'
+    rules = f'''Make sure to follow the following rules:
+    1. Phrase questions such that they can be answered independently, without context. (ex. do not ask questions like "What is figure 4?" or "Who is the author?" because those questions cannot be answered independently without context, if those questions cover critical information, either add more context or rephrase the question to be more general and can be answered independently). 
+    2. Each q-a pairs should be in json format in one line, each separated by a newline as shown in the example above
+    3. Be comprehensive! Make sure to cover all of the essential topics of the paper including but not limited to: main contribution, problem domain, significance of the paper/method, methodology, related works, other methods/works in the domain, technical details, experiments/reseults, and every other related concepts and information that are crucial to understanding the paper, its methods, its significance, the the problem domain
+    '''
+    prompt = f'{context}\n\n{instruction}\n\n{rules}\n\n{paper_text}'
+    answer = openai_api.chatGPT(prompt, engine=model)
+    return answer
 
 async def process_requests(
         tasks:list,
         engine:str='gpt-3.5-turbo',
         max_requests_per_minute:int=3500,
-        max_tokens_per_minute:int=90000,
-        max_attempts:int=3,
+        max_tokens_per_minute:int=50000, # 90000 after first 48 hours, 60000 for first 48 hours
 ):
     seconds_to_pause_after_rate_limit_error = 15
-    seconds_to_sleep_each_loop = 0.001 / 3  # 1 ms limits max throughput to 1,000 requests per second
+    seconds_to_sleep_each_loop = 0.001 / 1  # 1 ms limits max throughput to 1,000 requests per second
 
     # initialize trackers
     queue_of_requests_to_retry = asyncio.Queue()
@@ -132,6 +146,7 @@ async def process_requests(
 
     requests = tasks.__iter__()
 
+    i = 0
     while True:
         # get next request (if one is not already waiting for capacity)
         if next_request is None:
@@ -141,14 +156,23 @@ async def process_requests(
             elif file_not_finished:
                 try:
                     # get new request
-                    request_json = json.loads(next(requests))
+                    # request_json = json.loads(str(next(requests)))
+                    request_json = tasks[i]
+
+                    print(request_json)
+                    pages = prepare_arxiv.retrieve_pdf_from_url(request_json['url'])
+
+                    paper_text = '\n\n'.join(pages)
+                    paper_text = openai_api.get_chunk_tokens(paper_text, max_tokens=10000, model=engine)
+                    request_json['paper_text'] = paper_text
+
                     next_request = APIRequest(
                         task_id=next(task_id_generator),
                         request_json=request_json,
                         # Should contain 'messages' key
-                        token_consumption=num_tokens(request_json),
-                        attempts_left=max_attempts,
+                        token_consumption=num_tokens(paper_text)+3000,
                     )
+
                     status_tracker.num_tasks_started += 1
                     status_tracker.num_tasks_in_progress += 1
                     logging.debug(f"Reading request {next_request.task_id}: {next_request}")
@@ -160,6 +184,7 @@ async def process_requests(
         # update available capacity
         current_time = time.time()
         seconds_since_update = current_time - last_update_time
+
         available_request_capacity = min(
             available_request_capacity + max_requests_per_minute * seconds_since_update / 60.0,
             max_requests_per_minute,
@@ -193,6 +218,7 @@ async def process_requests(
                     )
                 )
                 next_request = None  # reset next_request to empty
+                i += 1
 
         # if all tasks are finished, break
         if status_tracker.num_tasks_in_progress == 0:
@@ -234,8 +260,8 @@ class APIRequest:
     task_id: int
     request_json: dict
     token_consumption: int
-    attempts_left: int
-    metadata: dict
+    attempts_left: int=3
+    metadata: dict = None
     result: list = field(default_factory=list)
 
     async def call_api(
@@ -244,8 +270,12 @@ class APIRequest:
         save_filepath: str,
         status_tracker: StatusTracker,
     ):
+        start_time = datetime.now()
         """Calls the OpenAI API and saves results."""
-        logging.info(f"Starting request #{self.task_id}")
+        title = self.request_json['title']
+        print(f'Processing {title}')
+
+        logging.info(f"Starting request #{self.task_id}: {title}")
         error = None
         try:
             # async with aiohttp.ClientSession() as session:
@@ -255,7 +285,8 @@ class APIRequest:
             #         response = await response.json()
 
             loop = asyncio.get_running_loop()
-            response = await loop.run_in_executor(None, openai_api.chatgpt, self.request_json)
+            response = await loop.run_in_executor(None, generate_qa_pairs, [self.request_json['title'], self.request_json['date']], self.request_json['paper_text'])
+            # response = await loop.run_in_executor(None, openai_api.chatgpt, self.request_json)
 
             if "error" in response:
                 logging.warning(
@@ -287,15 +318,30 @@ class APIRequest:
                 status_tracker.num_tasks_in_progress -= 1
                 status_tracker.num_tasks_failed += 1
         else:
-            data = (
-                [self.request_json, response, self.metadata]
-                if self.metadata
-                else [self.request_json, response]
-            )
-            append_to_jsonl(data, save_filepath)
+            # data = (
+            #     [self.request_json, response, self.metadata]
+            #     if self.metadata
+            #     else [self.request_json, response]
+            # )
+            end_time = datetime.now()
+            time_difference = end_time - start_time
+            print(f"Parsed {title} in {time_difference.total_seconds()} seconds.")
+
+            qas = response.split('\n')
+            qas = [json.loads(qa) for qa in qas if '}' in qa]
+
+            mode = 'w'
+            if os.path.exists(save_filepath):
+                mode = 'a'
+            with open(save_filepath, mode) as f:
+                for obj in qas:
+                    f.write(json.dumps(obj) + '\n')
+            # append_to_jsonl(data, save_filepath)
+
             status_tracker.num_tasks_in_progress -= 1
             status_tracker.num_tasks_succeeded += 1
             logging.debug(f"Request {self.task_id} saved to {save_filepath}")
+            print(f"{title} saved to {save_filepath}")
 
 
 # functions
@@ -315,64 +361,10 @@ def append_to_jsonl(data, filename: str) -> None:
 
 def num_tokens(
     prompt: str,
-    api_endpoint: str='chat/completions',
     token_encoding_name: str='cl100k_base',
 ):
     encoding = tiktoken.get_encoding(token_encoding_name)
     return len(encoding.encode(prompt))
-    
-
-def num_tokens_consumed_from_request(
-    request_json: dict,
-    api_endpoint: str='chat/completions',
-    token_encoding_name: str='cl100k_base',
-):
-    """Count the number of tokens in the request. Only supports completion and embedding requests."""
-    encoding = tiktoken.get_encoding(token_encoding_name)
-    # if completions request, tokens = prompt + n * max_tokens
-    if api_endpoint.endswith("completions"):
-        max_tokens = request_json.get("max_tokens", 15)
-        n = request_json.get("n", 1)
-        completion_tokens = n * max_tokens
-
-        # chat completions
-        if api_endpoint.startswith("chat/"):
-            num_tokens = 0
-            for message in request_json["messages"]:
-                num_tokens += 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
-                for key, value in message.items():
-                    num_tokens += len(encoding.encode(value))
-                    if key == "name":  # if there's a name, the role is omitted
-                        num_tokens -= 1  # role is always required and always 1 token
-            num_tokens += 2  # every reply is primed with <im_start>assistant
-            return num_tokens + completion_tokens
-        # normal completions
-        else:
-            prompt = request_json["prompt"]
-            if isinstance(prompt, str):  # single prompt
-                prompt_tokens = len(encoding.encode(prompt))
-                num_tokens = prompt_tokens + completion_tokens
-                return num_tokens
-            elif isinstance(prompt, list):  # multiple prompts
-                prompt_tokens = sum([len(encoding.encode(p)) for p in prompt])
-                num_tokens = prompt_tokens + completion_tokens * len(prompt)
-                return num_tokens
-            else:
-                raise TypeError('Expecting either string or list of strings for "prompt" field in completion request')
-    # if embeddings request, tokens = input tokens
-    elif api_endpoint == "embeddings":
-        input = request_json["input"]
-        if isinstance(input, str):  # single input
-            num_tokens = len(encoding.encode(input))
-            return num_tokens
-        elif isinstance(input, list):  # multiple inputs
-            num_tokens = sum([len(encoding.encode(i)) for i in input])
-            return num_tokens
-        else:
-            raise TypeError('Expecting either string or list of strings for "inputs" field in embedding request')
-    # more logic needed to support other API calls (e.g., edits, inserts, DALL-E)
-    else:
-        raise NotImplementedError(f'API endpoint "{api_endpoint}" not implemented in this script')
 
 
 def task_id_generator_function():
