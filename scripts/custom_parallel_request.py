@@ -405,16 +405,8 @@ if __name__ == "__main__":
 
     # run script
     asyncio.run(
-        process_api_requests_from_file(
-            requests_filepath=args.requests_filepath,
-            save_filepath=args.save_filepath,
-            request_url=args.request_url,
-            api_key=args.api_key,
-            max_requests_per_minute=float(args.max_requests_per_minute),
-            max_tokens_per_minute=float(args.max_tokens_per_minute),
-            token_encoding_name=args.token_encoding_name,
-            max_attempts=int(args.max_attempts),
-            logging_level=int(args.logging_level),
+        process_requests(
+            tasks=[],
         )
     )
 

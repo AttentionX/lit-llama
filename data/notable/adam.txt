@@ -1,1 +1,11 @@
 title,published,modified,pdfUrl,conference
+LLaMA: Open and Efficient Foundation Language Models,27 Feb 2023,27 Feb 2023,https://arxiv.org/pdf/2302.13971
+G-Eval: NLG Evaluation using GPT-4 with Better Human Alignment,29 Mar 2023,23 May 2023,https://arxiv.org/abs/2303.16634
+HuggingGPT: Solving AI Tasks with ChatGPT and its Friends in Hugging Face,30 Mar 2023,25 May 2023,https://arxiv.org/pdf/2303.17580
+Generative Agents: Interactive Simulacra of Human Behavior,7 Apr 2023,7 Apr 2023https://arxiv.org/pdf/2304.03442
+LIMA: Less Is More for Alignment,18 May 2023,18 May 2023,https://arxiv.org/pdf/2305.11206
+ReAct: Synergizing Reasoning and Acting in Language Models,6 Oct 2022,10 Mar 2023,https://arxiv.org/pdf/2210.03629
+LLaMA-Adapter: Efficient Fine-tuning of Language Models with Zero-init Attention,28 Mar 2023,28 Mar 2023,https://arxiv.org/pdf/2303.16199
+LLaMA-Adapter V2: Parameter-Efficient Visual Instruction Model,28 Apr 2023,28 Apr 2023,https://arxiv.org/pdf/2304.15010
+GPT-4 Technical Report,15 Mar 2023,27 Mar 2023,https://arxiv.org/pdf/2303.08774
+Gorilla: Large Language Model Connected with Massive APIs,24 May 2023,24 May 2023,https://arxiv.org/pdf/2305.15334

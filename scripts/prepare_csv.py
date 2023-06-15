@@ -81,17 +81,17 @@ def get_sections(page:str):
             j = i
     return final_sections
 
-def read_papers_from_csv(csv_path:str='data/notable/NCP-1.txt'):
+def read_papers_from_csv(csv_path:str='data/notable/adam.txt'):
     destination_path = Path('data/qa/notable')
     with open(csv_path, 'r') as f:
         reader = csv.reader(f)
         i = 0
         for line in reader:
             print(i+1, 'th file in', csv_path.split('/')[-1])
-            if len(line) >= 5:
-                url = line[4]
-                date = line[2]
-                title = line[1]
+            if len(line) >= 4:
+                url = line[3]
+                date = line[1]
+                title = line[0]
                 
                 clean_title = title.replace(' ', '_')
                 out_title = f'{i}_{clean_title}.jsonl'
