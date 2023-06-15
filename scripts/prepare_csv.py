@@ -46,6 +46,19 @@ def generate_questions(paper_info:list, text:str, page_num:int, reference:str=No
     answer = openai_api.chatGPT(prompt)
     return answer
 
+def generate_qa_pairs(paper_info:list, paper_text:str):
+    context = f'The following is from the paper "{paper_info[0]}" released in {paper_info[1]}'
+    examples = '{"question": "When did Virgin Australia start operating?", "answer": "Virgin Australia commenced services on 31 August 2000 as Virgin Blue, with two aircraft on a single route."}\n{"question": "When was Tomoaki Komorida born?", "answer": "Tomoaki Komorida was born on July 10,1981."}\n{"question": "Who was Kyle Van Zyl playing against when he scored 36 of hisa teams 61 points?", "answer": "Kyle Van Zyl was playing against Boland U21 when he scored 36 points, leading his team to victory in a 61-3 win."}'
+    instruction = f'Generate as many question-answer pairs as possible, in the following format:\n---\n{examples}\n---\n about the following information from the paper, covering all of the core topics/subjects that are crucial to understanding the paper, its methodologies, related works, domain problem and alternative methods, and its significance. Output in json format (Each line containing a json object).'
+    rules = f'''Make sure to follow the following rules:
+    1. Phrase questions such that they can be answered independently, without context. (ex. do not ask questions like "What is figure 4?" or "Who is the author?" because those questions cannot be answered independently without context, if those questions cover critical information, either add more context or rephrase the question to be more general and can be answered independently). 
+    2. Each q-a pairs should be in json format in one line, each separated by a newline as shown in the example above
+    3. Be comprehensive! Make sure to cover all of the essential topics of the paper including but not limited to: main contribution, problem domain, significance of the paper/method, methodology, related works, other methods/works in the domain, technical details, experiments/reseults, and every other related concepts and information that are crucial to understanding the paper, its methods, its significance, the the problem domain
+    '''
+    prompt = f'{context}\n\n{instruction}\n\n{rules}\n\n{paper_text}'
+    answer = openai_api.chatGPT(prompt, engine='gpt-3.5-turbo-16k')
+    return answer
+
 def get_page_text(sections_of_pages:list, page_num:int):
     cur_page_sections = sections_of_pages[page_num]
     if page_num != 0:
@@ -81,7 +94,7 @@ def get_sections(page:str):
             j = i
     return final_sections
 
-def read_papers_from_csv(csv_path:str='data/notable/adam.txt'):
+def read_papers_from_csv(csv_path:str='data/notable/adam.txt', all_at_once=True):
     destination_path = Path('data/qa/notable')
     with open(csv_path, 'r') as f:
         reader = csv.reader(f)
@@ -94,23 +107,38 @@ def read_papers_from_csv(csv_path:str='data/notable/adam.txt'):
                 title = line[0]
                 
                 clean_title = title.replace(' ', '_')
-                out_title = f'{i}_{clean_title}.jsonl'
+                out_title = f'{i+1}_{clean_title}.jsonl'
                 
-                pages = prepare_arxiv.retrieve_pdf_from_url(url)
-                pages_sections = [get_sections(page) for page in pages]
-                beginning_of_paper = pages_sections[0][:2]
-                for page in pages_sections:
-                    page_text = get_page_text(pages_sections, pages_sections.index(page))
-                    qas = generate_questions([title, date], page_text, pages_sections.index(page), reference='\n'.join(beginning_of_paper))
+                if all_at_once:
+                    pages = prepare_arxiv.retrieve_pdf_from_url(url)
+                    paper_text = '\n\n'.join(pages)
+                    paper_text = openai_api.get_chunk_tokens(paper_text, max_tokens=12000)
+                    qas = generate_qa_pairs([title, date], paper_text)
                     qas = qas.split('\n')
                     qas = [json.loads(qa) for qa in qas if '}' in qa]
-                    # Write qas to json
                     mode = 'w'
                     if os.path.exists(destination_path / f'{out_title}.jsonl'):
                         mode = 'a'
                     with open(destination_path / f'{out_title}.jsonl', mode) as f:
                         for obj in qas:
                             f.write(json.dumps(obj) + '\n')
+                else:
+                    pages_sections = [get_sections(page) for page in pages]
+                    beginning_of_paper = pages_sections[0][:2]
+                    for page in pages_sections:
+                        page_text = get_page_text(pages_sections, pages_sections.index(page))
+                        qas = generate_questions([title, date], page_text, pages_sections.index(page), reference='\n'.join(beginning_of_paper))
+                        qas = qas.split('\n')
+                        qas = [json.loads(qa) for qa in qas if '}' in qa]
+                        # Write qas to json
+                        mode = 'w'
+                        if os.path.exists(destination_path / f'{out_title}.jsonl'):
+                            mode = 'a'
+                        with open(destination_path / f'{out_title}.jsonl', mode) as f:
+                            for obj in qas:
+                                f.write(json.dumps(obj) + '\n')
+            else:
+                print(f'Line {i+1} in {csv_path.split("/")[-1]} is invalid: {line}')
             i += 1
     return True
 

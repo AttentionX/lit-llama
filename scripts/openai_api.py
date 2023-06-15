@@ -10,7 +10,7 @@ load_dotenv()
 openai.api_key = os.environ.get('OPENAI_API_KEY')
 BACKUP_KEY = os.environ.get('OPENAI_API_KEY2')
 
-NUM_KEYS = 2
+NUM_KEYS = 3
 KEYS = []
 CURR_KEY = 0
 
@@ -22,6 +22,13 @@ for i in range(NUM_KEYS):
 
 # print(len(KEYS))
 
+def get_chunk_tokens(text, MAX_CHUNK=3000):
+    cur_len = token_count(text)
+    if cur_len > MAX_CHUNK:
+        char_length = (len(text)*MAX_CHUNK)//cur_len
+        text = text[:char_length]
+    return text
+
 def token_count(text:str, model='gpt-3.5-turbo'):
     encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
     num_tokens = len(encoding.encode(text))
@@ -31,9 +38,8 @@ def embedding(text):
     text = text.replace("\n", " ")
     return openai.Embedding.create(input = [text], model="text-embedding-ada-002")['data'][0]['embedding']
     
-def chatGPT(chat_history, system='You are a helpful assistant.'):
+def chatGPT(chat_history, system='You are a helpful assistant.', engine='gpt-3.5-turbo'):
     global CURR_KEY
-    engine = "gpt-3.5-turbo"
     messages = [
         {"role": "system", "content": system},
     ]

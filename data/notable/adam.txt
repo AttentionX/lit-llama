@@ -2,10 +2,21 @@ title,published,modified,pdfUrl,conference
 LLaMA: Open and Efficient Foundation Language Models,27 Feb 2023,27 Feb 2023,https://arxiv.org/pdf/2302.13971
 G-Eval: NLG Evaluation using GPT-4 with Better Human Alignment,29 Mar 2023,23 May 2023,https://arxiv.org/abs/2303.16634
 HuggingGPT: Solving AI Tasks with ChatGPT and its Friends in Hugging Face,30 Mar 2023,25 May 2023,https://arxiv.org/pdf/2303.17580
-Generative Agents: Interactive Simulacra of Human Behavior,7 Apr 2023,7 Apr 2023https://arxiv.org/pdf/2304.03442
+Generative Agents: Interactive Simulacra of Human Behavior,7 Apr 2023,7 Apr 2023,https://arxiv.org/pdf/2304.03442
 LIMA: Less Is More for Alignment,18 May 2023,18 May 2023,https://arxiv.org/pdf/2305.11206
 ReAct: Synergizing Reasoning and Acting in Language Models,6 Oct 2022,10 Mar 2023,https://arxiv.org/pdf/2210.03629
-LLaMA-Adapter: Efficient Fine-tuning of Language Models with Zero-init Attention,28 Mar 2023,28 Mar 2023,https://arxiv.org/pdf/2303.16199
 LLaMA-Adapter V2: Parameter-Efficient Visual Instruction Model,28 Apr 2023,28 Apr 2023,https://arxiv.org/pdf/2304.15010
 GPT-4 Technical Report,15 Mar 2023,27 Mar 2023,https://arxiv.org/pdf/2303.08774
-Gorilla: Large Language Model Connected with Massive APIs,24 May 2023,24 May 2023,https://arxiv.org/pdf/2305.15334
+Chain-of-Thought Prompting Elicits Reasoning in Large Language Models,28 Jan 2022,10 Jan 2023,https://arxiv.org/pdf/2201.11903
+QLoRA: Efficient Finetuning of Quantized LLMs,23 May 2023,23 May 2023,https://arxiv.org/pdf/2305.14314
+One-for-All: Generalized LoRA for Parameter-Efficient Fine-tuning,13 Jun 2023,13 Jun 2023,https://arxiv.org/pdf/2306.07967
+The False Promise of Imitating Proprietary LLMs,25 May 2023,25 May 2023,https://arxiv.org/pdf/2305.15717
+Orca: Progressive Learning from Complex Explanation Traces of GPT-4,5 Jun 2023,5 Jun 2023,https://arxiv.org/pdf/2306.02707
+Direct Preference Optimization: Your Language Model is Secretly a Reward Model,29 May 2023,29 May 2023,https://arxiv.org/pdf/2305.18290
+A Survey on In-context Learning,31 Dec 2022,1 Jun 2023,https://arxiv.org/pdf/2301.00234
+A Survey of Large Language Models,31 Mar 2023,7 May 2023,https://arxiv.org/pdf/2303.18223
+How Far Can Camels Go? Exploring the State of Instruction Tuning on Open Resources,7 Jun 2023,7 Jun 2023,https://arxiv.org/pdf/2306.04751
+On the Effectiveness of Parameter-Efficient Fine-Tuning,28 Nov 2022,28 Nov 2022,https://arxiv.org/pdf/2211.15583
+PaLM 2 Technical Report,17 May 2023,17 May 2023,https://arxiv.org/pdf/2305.10403
+Harnessing the Power of LLMs in Practice: A Survey on ChatGPT and Beyond,26 Apr 2023,27 Apr 2023,https://arxiv.org/pdf/2304.13712
+What Can Transformers Learn In-Context? A Case Study of Simple Function Classes,1 Aug 2022,15 Jan 2023,https://arxiv.org/pdf/2208.01066
