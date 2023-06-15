@@ -1,6 +1,7 @@
 import os
 import openai
 from dotenv import load_dotenv
+import tiktoken
 
 load_dotenv()
 
@@ -21,6 +22,10 @@ for i in range(NUM_KEYS):
 
 # print(len(KEYS))
 
+def token_count(text:str, model='gpt-3.5-turbo'):
+    encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
+    num_tokens = len(encoding.encode(text))
+    return num_tokens
 
 def embedding(text):
     text = text.replace("\n", " ")

@@ -191,3 +191,12 @@ Editing Factual Knowledge in Language Models,16 Apr 2021,8 Sep 2021,https://arxi
 In-Context Retrieval-Augmented Language Models,31 Jan 2023,31 Jan 2023,https://arxiv.org/pdf/2302.00083
 Verify-and-Edit: A Knowledge-Enhanced Chain-of-Thought Framework,5 May 2023,5 May 2023,https://arxiv.org/pdf/2305.03268
 Inspecting and Editing Knowledge Representations in Language Models,3 Apr 2023,22 May 2023,https://arxiv.org/pdf/2304.00740
+How Far Can Camels Go? Exploring the State of Instruction Tuning on Open Resources,7 Jun 2023,7 Jun 2023,https://arxiv.org/pdf/2306.04751
+SwiftSage: A Generative Agent with Fast and Slow Thinking for Complex Interactive Tasks,27 May 2023,27 May 2023,https://arxiv.org/pdf/2305.17390
+Can Large Language Models Be an Alternative to Human Evaluations?,3 May 2023,3 May 2023,https://arxiv.org/pdf/2305.01937,ACL 2023
+Exploring the Use of Large Language Models for Reference-Free Text Quality Evaluation: A Preliminary Empirical Study,3 Apr 2023,10 Apr 2023,https://arxiv.org/pdf/2304.00723
+Self-Refine: Iterative Refinement with Self-Feedback,30 Mar 2023,25 May 2023,https://arxiv.org/pdf/2303.17651
+RARR: Researching and Revising What Language Models Say, Using Language Models,17 Oct 2022,31 May 2023,https://arxiv.org/pdf/2210.08726,ACL 2023
+A Survey of Large Language Models,31 Mar 2023,7 May 2023,https://arxiv.org/pdf/2303.18223
+WizardLM: Empowering Large Language Models to Follow Complex Instructions,24 Apr 2023,10 Jun 2023,https://arxiv.org/pdf/2304.12244
+SELF-INSTRUCT: Aligning Language Modelswith Self-Generated Instructions,20 Dec 2022,25 May 2023,https://arxiv.org/pdf/2212.10560,ACL 2023

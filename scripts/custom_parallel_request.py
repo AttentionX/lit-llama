@@ -146,7 +146,7 @@ async def process_requests(
                         task_id=next(task_id_generator),
                         request_json=request_json,
                         # Should contain 'messages' key
-                        token_consumption=num_tokens(request_json)+500,
+                        token_consumption=num_tokens(request_json),
                         attempts_left=max_attempts,
                     )
                     status_tracker.num_tasks_started += 1
