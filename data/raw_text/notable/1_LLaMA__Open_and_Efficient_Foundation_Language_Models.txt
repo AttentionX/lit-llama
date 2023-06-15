@@ -1,0 +1,521 @@
+LLaMA: Open and Efﬁcient Foundation Language Models
+Hugo Touvron, Thibaut Lavril, Gautier Izacard, Xavier Martinet
+Marie-Anne Lachaux, Timothee Lacroix, Baptiste Rozière, Naman Goyal
+Eric Hambro, Faisal Azhar, Aurelien Rodriguez, Armand Joulin
+Edouard Grave, Guillaume Lample
+Meta AI
+Abstract
+We introduce LLaMA, a collection of founda-
+tion language models ranging from 7B to 65B
+parameters. We train our models on trillions
+of tokens, and show that it is possible to train
+state-of-the-art models using publicly avail-
+able datasets exclusively, without resorting
+to proprietary and inaccessible datasets. In
+particular, LLaMA-13B outperforms GPT-3
+(175B) on most benchmarks, and LLaMA-
+65B is competitive with the best models,
+Chinchilla-70B and PaLM-540B. We release
+all our models to the research community1.
+1 Introduction
+Large Languages Models (LLMs) trained on mas-
+sive corpora of texts have shown their ability to per-
+form new tasks from textual instructions or from a
+few examples (Brown et al., 2020). These few-shot
+properties ﬁrst appeared when scaling models to a
+sufﬁcient size (Kaplan et al., 2020), resulting in a
+line of work that focuses on further scaling these
+models (Chowdhery et al., 2022; Rae et al., 2021).
+These efforts are based on the assumption that
+more parameters will lead to better performance.
+However, recent work from Hoffmann et al. (2022)
+shows that, for a given compute budget, the best
+performances are not achieved by the largest mod-
+els, but by smaller models trained on more data.
+The objective of the scaling laws from Hoff-
+mann et al. (2022) is to determine how to best
+scale the dataset and model sizes for a particular
+training compute budget. However, this objective
+disregards the inference budget, which becomes
+critical when serving a language model at scale.
+In this context, given a target level of performance,
+the preferred model is not the fastest to train but the
+fastest at inference, and although it may be cheaper
+to train a large model to reach a certain level of
+Equal contribution. Correspondence: {htouvron,
+thibautlav,gizacard,egrave,glample}@meta.com
+1https://github.com/facebookresearch/llamaperformance, a smaller one trained longer will
+ultimately be cheaper at inference. For instance,
+although Hoffmann et al. (2022) recommends
+training a 10B model on 200B tokens, we ﬁnd
+that the performance of a 7B model continues to
+improve even after 1T tokens.
+The focus of this work is to train a series of
+language models that achieve the best possible per-
+formance at various inference budgets, by training
+on more tokens than what is typically used. The
+resulting models, called LLaMA , ranges from 7B
+to 65B parameters with competitive performance
+compared to the best existing LLMs. For instance,
+LLaMA-13B outperforms GPT-3 on most bench-
+marks, despite being 10 smaller. We believe that
+this model will help democratize the access and
+study of LLMs, since it can be run on a single GPU.
+At the higher-end of the scale, our 65B-parameter
+model is also competitive with the best large lan-
+guage models such as Chinchilla or PaLM-540B.
+Unlike Chinchilla, PaLM, or GPT-3, we only
+use publicly available data, making our work com-
+patible with open-sourcing, while most existing
+models rely on data which is either not publicly
+available or undocumented (e.g. “Books – 2TB” or
+“Social media conversations”). There exist some
+exceptions, notably OPT (Zhang et al., 2022),
+GPT-NeoX (Black et al., 2022), BLOOM (Scao
+et al., 2022) and GLM (Zeng et al., 2022), but none
+that are competitive with PaLM-62B or Chinchilla.
+In the rest of this paper, we present an overview
+of the modiﬁcations we made to the transformer
+architecture (Vaswani et al., 2017), as well as our
+training method. We then report the performance of
+our models and compare with others LLMs on a set
+of standard benchmarks. Finally, we expose some
+of the biases and toxicity encoded in our models,
+using some of the most recent benchmarks from
+the responsible AI community.arXiv:2302.13971v1  [cs.CL]  27 Feb 2023
+
+2 Approach
+Our training approach is similar to the methods
+described in previous work (Brown et al., 2020;
+Chowdhery et al., 2022), and is inspired by the
+Chinchilla scaling laws (Hoffmann et al., 2022).
+We train large transformers on a large quantity of
+textual data using a standard optimizer.
+2.1 Pre-training Data
+Our training dataset is a mixture of several sources,
+reported in Table 1, that cover a diverse set of do-
+mains. For the most part, we reuse data sources
+that have been leveraged to train other LLMs, with
+the restriction of only using data that is publicly
+available, and compatible with open sourcing. This
+leads to the following mixture of data and the per-
+centage they represent in the training set:
+English CommonCrawl [67%]. We preprocess
+ﬁve CommonCrawl dumps, ranging from 2017
+to 2020, with the CCNet pipeline (Wenzek et al.,
+2020). This process deduplicates the data at the
+line level, performs language identiﬁcation with
+a fastText linear classiﬁer to remove non-English
+pages and ﬁlters low quality content with an n-
+gram language model. In addition, we trained a
+linear model to classify pages used as references
+in Wikipedia v.s.randomly sampled pages, and
+discarded pages not classiﬁed as references.
+C4 [15%]. During exploratory experiments, we
+observed that using diverse pre-processed Com-
+monCrawl datasets improves performance. We thus
+included the publicly available C4 dataset (Raffel
+et al., 2020) in our data. The preprocessing of C4
+also contains deduplication and language identiﬁ-
+cation steps: the main difference with CCNet is
+the quality ﬁltering, which mostly relies on heuris-
+tics such as presence of punctuation marks or the
+number of words and sentences in a webpage.
+Github [4.5%]. We use the public GitHub
+dataset available on Google BigQuery. We only
+kept projects that are distributed under the Apache,
+BSD and MIT licenses. Additionally, we ﬁltered
+low quality ﬁles with heuristics based on the line
+length or proportion of alphanumeric characters,
+and removed boilerplate, such as headers, with reg-
+ular expressions. Finally, we deduplicate the result-
+ing dataset at the ﬁle level, with exact matches.
+Wikipedia [4.5%]. We add Wikipedia dumps
+from the June-August 2022 period, covering 20Dataset Sampling prop. Epochs Disk size
+CommonCrawl 67.0% 1.10 3.3 TB
+C4 15.0% 1.06 783 GB
+Github 4.5% 0.64 328 GB
+Wikipedia 4.5% 2.45 83 GB
+Books 4.5% 2.23 85 GB
+ArXiv 2.5% 1.06 92 GB
+StackExchange 2.0% 1.03 78 GB
+Table 1: Pre-training data. Data mixtures used for pre-
+training, for each subset we list the sampling propor-
+tion, number of epochs performed on the subset when
+training on 1.4T tokens, and disk size. The pre-training
+runs on 1T tokens have the same sampling proportion.
+languages, which use either the Latin or Cyrillic
+scripts: bg,ca,cs,da,de,en,es,fr,hr,hu,it,
+nl,pl,pt,ro,ru,sl,sr,sv,uk. We process the
+data to remove hyperlinks, comments and other
+formatting boilerplate.
+Gutenberg and Books3 [4.5%]. We include
+two book corpora in our training dataset: the Guten-
+berg Project, which contains books that are in the
+public domain, and the Books3 section of TheP-
+ile (Gao et al., 2020), a publicly available dataset
+for training large language models. We perform
+deduplication at the book level, removing books
+with more than 90% content overlap.
+ArXiv [2.5%]. We process arXiv Latex ﬁles
+to add scientiﬁc data to our dataset. Following
+Lewkowycz et al. (2022), we removed everything
+before the ﬁrst section, as well as the bibliography.
+We also removed the comments from the .tex ﬁles,
+and inline-expanded deﬁnitions and macros written
+by users to increase consistency across papers.
+Stack Exchange [2%]. We include a dump of
+Stack Exchange, a website of high quality ques-
+tions and answers that covers a diverse set of do-
+mains, ranging from computer science to chemistry.
+We kept the data from the 28 largest websites, re-
+moved the HTML tags from text and sorted the
+answers by score (from highest to lowest).
+Tokenizer. We tokenize the data with the byte-
+pair encoding (BPE) algorithm (Sennrich et al.,
+2015), using the implementation from Sentence-
+Piece (Kudo and Richardson, 2018). Notably, we
+split all numbers into individual digits, and fallback
+to bytes to decompose unknown UTF-8 characters.
+
+params dimension nheadsnlayers learning rate batch size ntokens
+6.7B 4096 32 32 3:0e 44M 1.0T
+13.0B 5120 40 40 3:0e 44M 1.0T
+32.5B 6656 52 60 1:5e 44M 1.4T
+65.2B 8192 64 80 1:5e 44M 1.4T
+Table 2: Model sizes, architectures, and optimization hyper-parameters.
+Overall, our entire training dataset contains
+roughly 1.4T tokens after tokenization. For most of
+our training data, each token is used only once dur-
+ing training, with the exception of the Wikipedia
+and Books domains, over which we perform ap-
+proximately two epochs.
+2.2 Architecture
+Following recent work on large language models,
+our network is based on the transformer architec-
+ture (Vaswani et al., 2017). We leverage various
+improvements that were subsequently proposed,
+and used in different models such as PaLM. Here
+are the main difference with the original architec-
+ture, and where we were found the inspiration for
+this change (in bracket):
+Pre-normalization [GPT3]. To improve the
+training stability, we normalize the input of each
+transformer sub-layer, instead of normalizing the
+output. We use the RMSNorm normalizing func-
+tion, introduced by Zhang and Sennrich (2019).
+SwiGLU activation function [PaLM]. We re-
+place the ReLU non-linearity by the SwiGLU ac-
+tivation function, introduced by Shazeer (2020) to
+improve the performance. We use a dimension of
+2
+34dinstead of 4das in PaLM.
+Rotary Embeddings [GPTNeo]. We remove the
+absolute positional embeddings, and instead, add
+rotary positional embeddings (RoPE), introduced
+by Su et al. (2021), at each layer of the network.
+The details of the hyper-parameters for our dif-
+ferent models are given in Table 2.
+2.3 Optimizer
+Our models are trained using the AdamW opti-
+mizer (Loshchilov and Hutter, 2017), with the fol-
+lowing hyper-parameters: 1= 0:9;2= 0:95.
+We use a cosine learning rate schedule, such that
+the ﬁnal learning rate is equal to 10% of the maxi-
+mal learning rate. We use a weight decay of 0:1and
+gradient clipping of 1:0. We use 2;000warmup
+0 200 400 600 800 1000 1200 1400
+Billion of tokens1.51.61.71.81.92.02.12.2Training lossLLaMA 7B
+LLaMA 13B
+LLaMA 33B
+LLaMA 65BFigure 1: Training loss over train tokens for the 7B,
+13B, 33B, and 65 models. LLaMA-33B and LLaMA-
+65B were trained on 1.4T tokens. The smaller models
+were trained on 1.0T tokens. All models are trained
+with a batch size of 4M tokens.
+steps, and vary the learning rate and batch size with
+the size of the model (see Table 2 for details).
+2.4 Efﬁcient implementation
+We make several optimizations to improve the train-
+ing speed of our models. First, we use an efﬁcient
+implementation of the causal multi-head attention
+to reduce memory usage and runtime. This imple-
+mentation, available in the xformers library,2is
+inspired by Rabe and Staats (2021) and uses the
+backward from Dao et al. (2022). This is achieved
+by not storing the attention weights and not com-
+puting the key/query scores that are masked due to
+the causal nature of the language modeling task.
+To further improve training efﬁciency, we re-
+duced the amount of activations that are recom-
+puted during the backward pass with checkpoint-
+ing. More precisely, we save the activations that
+are expensive to compute, such as the outputs of
+linear layers. This is achieved by manually imple-
+menting the backward function for the transformer
+layers, instead of relying on the PyTorch autograd.
+To fully beneﬁt from this optimization, we need to
+2https://github.com/facebookresearch/xformers
+
+BoolQ PIQA SIQA HellaSwag WinoGrande ARC-e ARC-c OBQA
+GPT-3 175B 60.5 81.0 - 78.9 70.2 68.8 51.4 57.6
+Gopher 280B 79.3 81.8 50.6 79.2 70.1 - - -
+Chinchilla 70B 83.7 81.8 51.3 80.8 74.9 - - -
+PaLM 62B 84.8 80.5 - 79.7 77.0 75.2 52.5 50.4
+PaLM-cont 62B 83.9 81.4 - 80.6 77.0 - - -
+PaLM 540B 88.0 82.3 - 83.4 81.1 76.6 53.0 53.4
+LLaMA7B 76.5 79.8 48.9 76.1 70.1 72.8 47.6 57.2
+13B 78.1 80.1 50.4 79.2 73.0 74.8 52.7 56.4
+33B 83.1 82.3 50.4 82.8 76.0 80.0 57.8 58.6
+65B 85.3 82.8 52.3 84.2 77.0 78.9 56.0 60.2
+Table 3: Zero-shot performance on Common Sense Reasoning tasks.
+reduce the memory usage of the model by using
+model and sequence parallelism, as described by
+Korthikanti et al. (2022). Moreover, we also over-
+lap the computation of activations and the commu-
+nication between GPUs over the network (due to
+all_reduce operations) as much as possible.
+When training a 65B-parameter model, our code
+processes around 380 tokens/sec/GPU on 2048
+A100 GPU with 80GB of RAM. This means that
+training over our dataset containing 1.4T tokens
+takes approximately 21 days.
+3 Main results
+Following previous work (Brown et al., 2020), we
+consider zero-shot and few-shot tasks, and report
+results on a total of 20 benchmarks:
+•Zero-shot. We provide a textual description
+of the task and a test example. The model
+either provides an answer using open-ended
+generation, or ranks the proposed answers.
+•Few-shot. We provide a few examples of the
+task (between 1 and 64) and a test example.
+The model takes this text as input and gener-
+ates the answer or ranks different options.
+We compare LLaMA with other foundation mod-
+els, namely the non-publicly available language
+models GPT-3 (Brown et al., 2020), Gopher (Rae
+et al., 2021), Chinchilla (Hoffmann et al., 2022)
+and PaLM (Chowdhery et al., 2022), as well as
+the open-sourced OPT models (Zhang et al., 2022),
+GPT-J (Wang and Komatsuzaki, 2021), and GPT-
+Neo (Black et al., 2022). In Section 4, we also
+brieﬂy compare LLaMA with instruction-tuned
+models such as OPT-IML (Iyer et al., 2022) and
+Flan-PaLM (Chung et al., 2022).We evaluate LLaMA on free-form generation
+tasks and multiple choice tasks. In the multiple
+choice tasks, the objective is to select the most
+appropriate completion among a set of given op-
+tions, based on a provided context. We select the
+completion with the highest likelihood given the
+provided context. We follow Gao et al. (2021)
+and use the likelihood normalized by the number
+of characters in the completion, except for certain
+datasets (OpenBookQA, BoolQ), for which we fol-
+low Brown et al. (2020), and select a completion
+based on the likelihood normalized by the likeli-
+hood of the completion given “Answer:” as context:
+P(completionjcontext )=P(completionj\Answer :").
+0-shot 1-shot 5-shot 64-shot
+GPT-3 175B 14.6 23.0 - 29.9
+Gopher 280B 10.1 - 24.5 28.2
+Chinchilla 70B 16.6 - 31.5 35.5
+PaLM8B 8.4 10.6 - 14.6
+62B 18.1 26.5 - 27.6
+540B 21.2 29.3 - 39.6
+LLaMA7B 16.8 18.7 22.0 26.1
+13B 20.1 23.4 28.1 31.9
+33B 24.9 28.3 32.9 36.0
+65B 23.8 31.0 35.0 39.9
+Table 4: NaturalQuestions. Exact match performance.
+3.1 Common Sense Reasoning
+We consider eight standard common sense rea-
+soning benchmarks: BoolQ (Clark et al., 2019),
+PIQA (Bisk et al., 2020), SIQA (Sap et al., 2019),
+
+HellaSwag (Zellers et al., 2019), WinoGrande (Sak-
+aguchi et al., 2021), ARC easy and challenge (Clark
+et al., 2018) and OpenBookQA (Mihaylov et al.,
+2018). These datasets include Cloze and Winograd
+style tasks, as well as multiple choice question an-
+swering. We evaluate in the zero-shot setting as
+done in the language modeling community.
+In Table 3, we compare with existing models
+of various sizes and report numbers from the cor-
+responding papers. First, LLaMA-65B outper-
+forms Chinchilla-70B on all reported benchmarks
+but BoolQ. Similarly, this model surpasses PaLM-
+540B everywhere but on BoolQ and WinoGrande.
+LLaMA-13B model also outperforms GPT-3 on
+most benchmarks despite being 10 smaller.
+3.2 Closed-book Question Answering
+We compare LLaMA to existing large language
+models on two closed-book question answering
+benchmarks: Natural Questions (Kwiatkowski
+et al., 2019) and TriviaQA (Joshi et al., 2017). For
+both benchmarks, we report exact match perfor-
+mance in a closed book setting, i.e., where the mod-
+els do not have access to documents that contain
+evidence to answer the question. In Table 4, we
+report performance on NaturalQuestions, and in Ta-
+ble 5, we report on TriviaQA. On both benchmarks,
+LLaMA-65B achieve state-of-the-arts performance
+in the zero-shot and few-shot settings. More im-
+portantly, the LLaMA-13B is also competitive on
+these benchmarks with GPT-3 and Chinchilla, de-
+spite being 5-10 smaller. This model runs on a
+single V100 GPU during inference.
+0-shot 1-shot 5-shot 64-shot
+Gopher 280B 43.5 - 57.0 57.2
+Chinchilla 70B 55.4 - 64.1 64.6
+LLaMA7B 50.0 53.4 56.3 57.6
+13B 56.6 60.5 63.1 64.0
+33B 65.1 67.9 69.9 70.4
+65B 68.2 71.6 72.6 73.0
+Table 5: TriviaQA. Zero-shot and few-shot exact
+match performance on the ﬁltered dev set.
+3.3 Reading Comprehension
+We evaluate our models on the RACE reading com-
+prehension benchmark (Lai et al., 2017). This
+dataset was collected from English reading com-
+prehension exams designed for middle and highRACE-middle RACE-high
+GPT-3 175B 58.4 45.5
+PaLM8B 57.9 42.3
+62B 64.3 47.5
+540B 68.1 49.1
+LLaMA7B 61.1 46.9
+13B 61.6 47.2
+33B 64.1 48.3
+65B 67.9 51.6
+Table 6: Reading Comprehension. Zero-shot accu-
+racy.
+school Chinese students. We follow the evaluation
+setup from Brown et al. (2020) and report results
+in Table 6. On these benchmarks, LLaMA-65B is
+competitive with PaLM-540B, and, LLaMA-13B
+outperforms GPT-3 by a few percents.
+3.4 Mathematical reasoning
+We evaluate our models on two mathematical rea-
+soning benchmarks: MATH (Hendrycks et al.,
+2021) and GSM8k (Cobbe et al., 2021). MATH
+is a dataset of 12K middle school and high school
+mathematics problems written in LaTeX. GSM8k
+is a set of middle school mathematical problems.
+In Table 7, we compare with PaLM and Min-
+erva (Lewkowycz et al., 2022). Minerva is a series
+of PaLM models ﬁnetuned on 38.5B tokens ex-
+tracted from ArXiv and Math Web Pages, while
+neither PaLM or LLaMA are ﬁnetuned on mathe-
+matical data. The numbers for PaLM and Minerva
+are taken from Lewkowycz et al. (2022), and we
+compare with and without maj1@k .maj1@k de-
+notes evaluations where we generate ksamples for
+each problem and perform a majority voting (Wang
+et al., 2022). On GSM8k, we observe that LLaMA-
+65B outperforms Minerva-62B, although it has not
+been ﬁne-tuned on mathematical data.
+3.5 Code generation
+We evaluate the ability of our models to write
+code from a natural language description on two
+benchmarks: HumanEval (Chen et al., 2021) and
+MBPP (Austin et al., 2021). For both tasks, the
+model receives a description of the program in a
+few sentences, as well as a few input-output ex-
+amples. In HumanEval, it also receives a function
+signature, and the prompt is formatted as natural
+code with the textual description and tests in a
+
+MATH +maj1@k GSM8k +maj1@k
+PaLM8B 1.5 - 4.1 -
+62B 4.4 - 33.0 -
+540B 8.8 - 56.5 -
+Minerva8B 14.1 25.4 16.2 28.4
+62B 27.6 43.4 52.4 68.5
+540B 33.6 50.3 68.5 78.5
+LLaMA7B 2.9 6.9 11.0 18.1
+13B 3.9 8.8 17.8 29.3
+33B 7.1 15.2 35.6 53.1
+65B 10.6 20.5 50.9 69.7
+Table 7: Model performance on quantitative reason-
+ing datasets. For majority voting, we use the same
+setup as Minerva, with k= 256 samples for MATH
+andk= 100 for GSM8k (Minerva 540B uses k= 64
+for MATH and and k= 40 for GSM8k). LLaMA-65B
+outperforms Minerva 62B on GSM8k, although it has
+not been ﬁne-tuned on mathematical data.
+docstring. The model needs to generate a Python
+program that ﬁts the description and satisﬁes the
+test cases. In Table 8, we compare the pass@1
+scores of our models with existing language mod-
+els that have not been ﬁnetuned on code, namely
+PaLM and LaMDA (Thoppilan et al., 2022). PaLM
+and LLaMA were trained on datasets that contain
+a similar number of code tokens.
+As show in Table 8, for a similar number
+of parameters, LLaMA outperforms other gen-
+eral models such as LaMDA and PaLM, which
+are not trained or ﬁnetuned speciﬁcally for code.
+LLaMA with 13B parameters and more outper-
+forms LaMDA 137B on both HumanEval and
+MBPP. LLaMA 65B also outperforms PaLM 62B,
+even when it is trained longer. The pass@1 results
+reported in this table were obtained by sampling
+with temperature 0.1. The pass@100 and pass@80
+metrics were obtained with temperature 0.8. We
+use the same method as Chen et al. (2021) to obtain
+unbiased estimates of the pass@k.
+It is possible to improve the performance on code
+by ﬁnetuning on code-speciﬁc tokens. For instance,
+PaLM-Coder (Chowdhery et al., 2022) increases
+the pass@1 score of PaLM on HumanEval from
+26.2% for PaLM to 36%. Other models trained
+speciﬁcally for code also perform better than gen-
+eral models on these tasks (Chen et al., 2021; Ni-
+jkamp et al., 2022; Fried et al., 2022). Finetuning
+on code tokens is beyond the scope of this paper.Params HumanEval MBPP
+pass@ @1 @100 @1 @80
+LaMDA 137B 14.0 47.3 14.8 62.4
+PaLM 8B 3.618.75.035.7
+PaLM 62B 15.9 46.321.4 63.2
+PaLM-cont 62B 23.7 - 31.2 -
+PaLM 540B 26.2 76.2 36.8 75.0
+LLaMA7B 10.5 36.5 17.7 56.2
+13B 15.8 52.5 22.0 64.0
+33B 21.7 70.7 30.2 73.4
+65B 23.7 79.3 37.7 76.8
+Table 8: Model performance for code generation.
+We report the pass@ score on HumanEval and MBPP.
+HumanEval generations are done in zero-shot and
+MBBP with 3-shot prompts similar to Austin et al.
+(2021). The values marked withare read from ﬁgures
+in Chowdhery et al. (2022).
+3.6 Massive Multitask Language
+Understanding
+The massive multitask language understanding
+benchmark, or MMLU, introduced by Hendrycks
+et al. (2020) consists of multiple choice questions
+covering various domains of knowledge, includ-
+ing humanities, STEM and social sciences. We
+evaluate our models in the 5-shot setting, using the
+examples provided by the benchmark, and report
+results in Table 9. On this benchmark, we observe
+that the LLaMA-65B is behind both Chinchilla-
+70B and PaLM-540B by a few percent in average,
+and across most domains. A potential explanation
+is that we have used a limited amount of books
+and academic papers in our pre-training data, i.e.,
+ArXiv, Gutenberg and Books3, that sums up to only
+177GB, while these models were trained on up to
+2TB of books. This large quantity of books used
+by Gopher, Chinchilla and PaLM may also explain
+why Gopher outperforms GPT-3 on this benchmark,
+while it is comparable on other benchmarks.
+3.7 Evolution of performance during training
+During training, we tracked the performance of our
+models on a few question answering and common
+sense benchmarks, and report them in Figure 2.
+On most benchmarks, the performance improves
+steadily, and correlates with the training perplexity
+of the model (see Figure 1). The exceptions are
+SIQA and WinoGrande. Most notably, on SIQA,
+we observe a lot of variance in performance,

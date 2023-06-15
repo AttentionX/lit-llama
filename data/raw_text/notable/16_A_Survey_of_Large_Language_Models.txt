@@ -1,0 +1,685 @@
+1
+A Survey of Large Language Models
+Wayne Xin Zhao, Kun Zhou*, Junyi Li*, Tianyi Tang, Xiaolei Wang, Yupeng Hou, Yingqian Min, Beichen
+Zhang, Junjie Zhang, Zican Dong, Yifan Du, Chen Y ang, Yushuo Chen, Zhipeng Chen, Jinhao Jiang,
+Ruiyang Ren, Yifan Li, Xinyu Tang, Zikang Liu, Peiyu Liu, Jian-Yun Nie and Ji-Rong Wen
+Abstract —Ever since the Turing Test was proposed in the 1950s, humans have explored the mastering of language intelligence
+by machine. Language is essentially a complex, intricate system of human expressions governed by grammatical rules. It poses a
+signiﬁcant challenge to develop capable artiﬁcial intelligence (AI) algorithms for comprehending and grasping a language. As a major
+approach, language modeling has been widely studied for language understanding and generation in the past two decades, evolving
+from statistical language models to neural language models. Recently, pre-trained language models (PLMs) have been proposed by pre-
+training Transformer models over large-scale corpora, showing strong capabilities in solving various natural language processing (NLP)
+tasks. Since the researchers have found that model scaling can lead to an improved model capacity, they further investigate the scaling
+effect by increasing the parameter scale to an even larger size. Interestingly, when the parameter scale exceeds a certain level, these
+enlarged language models not only achieve a signiﬁcant performance improvement, but also exhibit some special abilities ( e.g., in-
+context learning) that are not present in small-scale language models ( e.g., BERT). To discriminate the language models in different
+parameter scales, the research community has coined the term large language models (LLM) for the PLMs of signiﬁcant size ( e.g.,
+containing tens or hundreds of billions of parameters). Recently, the research on LLMs has been largely advanced by both academia
+and industry, and a remarkable progress is the launch of ChatGPT (a powerful AI chatbot developed based on LLMs), which has
+attracted widespread attention from society. The technical evolution of LLMs has been making an important impact on the entire AI
+community, which would revolutionize the way how we develop and use AI algorithms. Considering this rapid technical progress, in this
+survey, we review the recent advances of LLMs by introducing the background, key ﬁndings, and mainstream techniques. In particular,
+we focus on four major aspects of LLMs, namely pre-training, adaptation tuning, utilization, and capacity evaluation. Besides, we also
+summarize the available resources for developing LLMs and discuss the remaining issues for future directions. This survey provides an
+up-to-date review of the literature on LLMs, which can be a useful resource for both researchers and engineers.
+Index Terms —Large Language Models; Emergent Abilities; Adaptation Tuning; Utilization; Alignment; Capacity Evaluation
+F
+1 I NTRODUCTION
+LANGUAGE is a prominent ability in human beings to
+express and communicate, which develops in early
+childhood and evolves over a lifetime [1, 2]. Machines,
+however, cannot naturally grasp the abilities of understand-
+ing and communicating in the form of human language,
+unless equipped with powerful artiﬁcial intelligence (AI)
+algorithms. It has been a longstanding research challenge
+to achieve this goal, to enable machines to read, write, and
+communicate like humans [3].
+Technically, language modeling (LM) is one of the major
+approaches to advancing language intelligence of machines.
+In general, LM aims to model the generative likelihood
+of word sequences, so as to predict the probabilities of
+future (or missing) tokens. The research of LM has received
+extensive attention in the literature, which can be divided
+into four major development stages:
+Statistical language models (SLM) . SLMs [4–7] are de-
+veloped based on statistical learning methods that rose in
+the 1990s. The basic idea is to build the word prediction
+model based on the Markov assumption, e.g., predicting the
+next word based on the most recent context. The SLMs with
+Version: v10 (update on May 7, 2023).
+GitHub link: https://github.com/RUCAIBox/LLMSurvey
+* K. Zhou and J. Li contribute equally to this work.
+The authors are mainly with Gaoling School of Artiﬁcial Intelligence and
+School of Information, Renmin University of China, Beijing, China; Jian-
+Yun Nie is with DIRO, Universit´ e de Montr´ eal, Canada.
+Contact e-mail: batmanﬂy@gmail.coma ﬁxed context length nare also called n-gram language
+models, e.g., bigram and trigram language models. SLMs
+have been widely applied to enhance task performance
+in information retrieval (IR) [8, 9] and natural language
+processing (NLP) [10–12]. However, they often suffer from
+the curse of dimensionality: it is difﬁcult to accurately
+estimate high-order language models since an exponential
+number of transition probabilities need to be estimated.
+Thus, specially designed smoothing strategies such as back-
+off estimation [13] and Good–Turing estimation [14] have
+been introduced to alleviate the data sparsity problem.
+Neural language models (NLM) . NLMs [15–17] character-
+ize the probability of word sequences by neural networks,
+e.g., recurrent neural networks (RNNs). As a remarkable
+contribution, the work in [15] introduced the concept of
+distributed representation of words and built the word predic-
+tion function conditioned on the aggregated context features
+(i.e.,the distributed word vectors). By extending the idea
+of learning effective features for words or sentences, a
+general neural network approach was developed to build
+a uniﬁed solution for various NLP tasks [18]. Further,
+word2vec [19, 20] was proposed to build a simpliﬁed shal-
+low neural network for learning distributed word represen-
+tations, which were demonstrated to be very effective across
+a variety of NLP tasks. These studies have initiated the
+use of language models for representation learning (beyond
+word sequence modeling), having an important impact on
+the ﬁeld of NLP .arXiv:2303.18223v10  [cs.CL]  7 May 2023
+
+2
+Pre-trained language models (PLM) . As an early at-
+tempt, ELMo [21] was proposed to capture context-aware
+word representations by ﬁrst pre-training a bidirectional
+LSTM (biLSTM) network (instead of learning ﬁxed word
+representations) and then ﬁne-tuning the biLSTM network
+according to speciﬁc downstream tasks. Further, based on
+the highly parallelizable Transformer architecture [22] with
+self-attention mechanisms, BERT [23] was proposed by pre-
+training bidirectional language models with specially de-
+signed pre-training tasks on large-scale unlabeled corpora.
+These pre-trained context-aware word representations are
+very effective as general-purpose semantic features, which
+have largely raised the performance bar of NLP tasks. This
+study has inspired a large number of follow-up work, which
+sets the “ pre-training and ﬁne-tuning ” learning paradigm.
+Following this paradigm, a great number of studies on
+PLMs have been developed, introducing either different
+architectures [24, 25] ( e.g., GPT-2 [26] and BART [24]) or
+improved pre-training strategies [27–29]. In this paradigm, it
+often requires ﬁne-tuning the PLM for adapting to different
+downstream tasks.
+Large language models (LLM) . Researchers ﬁnd that
+scaling PLM ( e.g., scaling model size or data size) often
+leads to an improved model capacity on downstream tasks
+(i.e.,following the scaling law [30]). A number of studies
+have explored the performance limit by training an ever
+larger PLM ( e.g., the 175B-parameter GPT-3 and the 540B-
+parameter PaLM). Although scaling is mainly conducted
+in model size (with similar architectures and pre-training
+tasks), these large-sized PLMs display different behaviors
+from smaller PLMs ( e.g., 330M-parameter BERT and 1.5B-
+parameter GPT-2) and show surprising abilities (called emer-
+gent abilities [31]) in solving a series of complex tasks. For
+example, GPT-3 can solve few-shot tasks through in-context
+learning , whereas GPT-2 cannot do well. Thus, the research
+community coins the term “ large language models (LLM) ”1for
+these large-sized PLMs [32–35]. A remarkable application
+of LLMs is ChatGPT2that adapts the LLMs from the GPT
+series for dialogue, which presents an amazing conversation
+ability with humans.
+In the existing literature, PLMs have been widely dis-
+cussed and surveyed [36–39], while LLMs are seldom re-
+viewed in a systematic way. To motivate our survey, we ﬁrst
+highlight three major differences between LLMs and PLMs.
+First, LLMs display some surprising emergent abilities that
+may not be observed in previous smaller PLMs. These abili-
+ties are key to the performance of language models on com-
+plex tasks, making AI algorithms unprecedently powerful
+and effective. Second, LLMs would revolutionize the way
+that humans develop and use AI algorithms. Unlike small
+PLMs, the major approach to accessing LLMs is through
+the prompting interface ( e.g., GPT-4 API). Humans have to
+understand how LLMs work and format their tasks in a way
+that LLMs can follow. Third, the development of LLMs no
+longer draws a clear distinction between research and en-
+gineering. The training of LLMs requires extensive practical
+experiences in large-scale data processing and distributed
+1. Note that a LLM is not necessarily more capable than a small PLM,
+and emergent abilities may not occur in some LLMs.
+2. https://openai.com/blog/chatgpt/parallel training. To develop capable LLMs, researchers
+have to solve complicated engineering issues, working with
+engineers or being engineers.
+Nowadays, LLMs are posing a signiﬁcant impact on
+the AI community, and the advent of ChatGPT and GPT-4
+leads to the rethinking of the possibilities of artiﬁcial general
+intelligence (AGI). OpenAI has published a technical article
+entitled “ Planning for AGI and beyond ”, which discusses
+the short-term and long-term plans to approach AGI [40],
+and a more recent paper has argued that GPT-4 might be
+considered as an early version of an AGI system [41]. The
+research areas of AI are being revolutionized by the rapid
+progress of LLMs. In the ﬁeld of NLP , LLMs can serve as a
+general-purpose language task solver (to some extent), and
+the research paradigm has been shifting towards the use
+of LLMs. In the ﬁeld of IR, traditional search engines are
+challenged by the new information seeking way through AI
+chatbots ( i.e.,ChatGPT), and New Bing3presents an initial
+attempt that enhances the search results based on LLMs. In
+the ﬁeld of CV , the researchers try to develop ChatGPT-like
+vision-language models that can better serve multimodal
+dialogues [42–45], and GPT-4 [46] has supported multi-
+modal input by integrating the visual information. This new
+wave of technology would potentially lead to a prosperous
+ecosystem of real-world applications based on LLMs. For
+instance, Microsoft 365 is being empowered by LLMs ( i.e.,
+Copilot) to automate the ofﬁce work, and OpenAI supports
+the use of plugins in ChatGPT for implementing special
+functions.
+Despite the progress and impact, the underlying prin-
+ciples of LLMs are still not well explored. Firstly, it is
+mysterious why emergent abilities occur in LLMs, instead of
+smaller PLMs. As a more general issue, there lacks a deep,
+detailed investigation of the key factors that contribute to
+the superior abilities of LLMs. It is important to study when
+and how LLMs obtain such abilities [47]. Although there are
+some meaningful discussions about this problem [31, 47],
+more principled investigations are needed to uncover the
+“secrets “ of LLMs. Secondly, it is difﬁcult for the research
+community to train capable LLMs. Due to the huge de-
+mand of computation resources, it is very costly to carry
+out repetitive, ablating studies for investigating the effect
+of various strategies for training LLMs. Indeed, LLMs are
+mainly trained by industry, where many important training
+details ( e.g., data collection and cleaning) are not revealed
+to the public. Thirdly, it is challenging to align LLMs with
+human values or preferences. Despite the capacities, LLMs
+are also likely to produce toxic, ﬁctitious, or harmful con-
+tents. It requires effective and efﬁcient control approaches
+to eliminating the potential risk of the use of LLMs [46].
+Faced with both opportunities and challenges, it needs
+more attention on the research and development of LLMs.
+In order to provide a basic understanding of LLMs, this
+survey conducts a literature review of the recent advances
+in LLMs from four major aspects, including pre-training
+(how to pre-train a capable LLM), adaptation tuning (how to
+effectively tune pre-trained LLMs from the two perspectives
+of effectiveness and safety), utilization (how to use LLMs
+for solving various downstream tasks) and capability eval-
+3. https://www.bing.com/new
+
+3
+uation (how to evaluate the abilities of LLMs and existing
+empirical ﬁndings). We thoroughly comb the literature and
+summarize the key ﬁndings, techniques, and methods of
+LLMs. For this survey, we also create a GitHub project
+website by collecting the supporting resources for LLMs, at
+the link https://github.com/RUCAIBox/LLMSurvey. We
+are also aware of several related review articles on PLMs
+or LLMs [32, 36, 38, 39, 43, 48–54]. These papers either
+discuss PLMs or some speciﬁc (or general) aspects of LLMs.
+Compared with them, we focus on the techniques and
+methods to develop and use LLMs and provide a relatively
+comprehensive reference to important aspects of LLMs.
+The remainder of this survey is organized as follows:
+Section 2 introduces the background for LLMs, with the
+terminology, settings, resources, and organization outline,
+followed by the summarization of available resources for
+developing LLMs in Section 3. Sections 4, 5, 6, and 7 review
+and summarize the recent progress from the four aspects
+of pre-training, adaptation tuning, utilization, and capacity
+evaluation, respectively. Finally, we conclude the survey in
+Section 8 by summarizing the major ﬁndings and discuss
+the remaining issues for future work.
+2 O VERVIEW
+In this section, we present an overview about the back-
+ground of LLMs and then summarize the technical evolu-
+tion of the GPT-series models.
+2.1 Background for LLMs
+Typically, large language models (LLMs) refer to Transformer
+language models that contain hundreds of billions (or
+more) of parameters4, which are trained on massive text
+data [32], such as GPT-3 [55], PaLM [56], Galactica [35],
+and LLaMA [57]. LLMs exhibit strong capacities to un-
+derstand natural language and solve complex tasks (via
+text generation). To have a quick understanding of how
+LLMs work, this part introduces the basic background for
+LLMs, including scaling laws, emergent abilities and key
+techniques.
+Scaling Laws for LLMs . Currently, LLMs are mainly built
+upon the Transformer architecture [22], where multi-head
+attention layers are stacked in a very deep neural network.
+Existing LLMs adopt similar Transformer architectures and
+pre-training objectives ( e.g., language modeling) as small
+language models. While, LLMs largely scale the model size,
+data size, and total compute (orders of magniﬁcation). Ex-
+tensive research has shown that scaling can largely improve
+the model capacity of LLMs [26, 55, 56]. Thus, it is useful
+to establish a quantitative approach to characterizing the
+scaling effect. Next, we introduce two representative scaling
+laws for Transformer language models [30, 34].
+KM scaling law5. In 2020, Kaplan et al. [30] (the OpenAI
+team) ﬁrstly proposed to model the power-law relationship
+4. In existing literature, there is no formal consensus on the minimum
+parameter scale for LLMs, since the model capacity is also related to
+data size and total compute. In this survey, we take a slightly loose
+deﬁnition of LLMs, and mainly focus on discussing language models
+with a model size larger than 10B.
+5. Since there was not a model trained following this law in the
+original paper, we took the last names of the two co-ﬁrst authors to
+name this scaling law.of model performance with respective to three major factors,
+namely model size ( N), dataset size ( D), and the amount of
+training compute ( C), for neural language models. Given
+a compute budget c, they empirically presented three basic
+formulas for the scaling law6:
+L(N) =Nc
+NN
+; N0:076;Nc8:81013(1)
+L(D) =Dc
+DD
+; D0:095;Dc5:41013
+L(C) =Cc
+CC
+; C0:050;Cc3:1108
+whereL()denotes the cross entropy loss in nats. The three
+laws were derived by ﬁtting the model performance with
+varied data sizes (22M to 23B tokens), model sizes (768M
+to 1.5B non-embedding parameters) and training compute,
+under some assumptions ( e.g., the analysis of one factor
+should be not bottlenecked by the other two factors). They
+showed that the model performance has a strong depen-
+dence relation on the three factors.
+Chinchilla scaling law . As another representative study,
+Hoffmann et al. [34] (the Google DeepMind team) proposed
+an alternative form for scaling laws to instruct the compute-
+optimal training for LLMs. They conducted rigorous exper-
+iments by varying a larger range of model sizes (70M to
+16B) and data sizes (5B to 500B tokens), and ﬁtted a similar
+scaling law yet with different coefﬁcients as below [34]:
+L(N;D ) =E+A
+N+B
+D; (2)
+whereE= 1:69;A= 406:4;B= 410:7,= 0:34and
+= 0:28. By optimizing the loss L(N;D )under the con-
+straintC6ND, they showed that the optimal allocation
+of compute budget to model size and data size can be
+derived as follows:
+Nopt(C) =GC
+6a
+; Dopt(C) =G 1C
+6b
+; (3)
+wherea=
++,b=
++andGis a scaling coefﬁcient that
+can be computed by A,B,and. As analyzed in [34],
+given an increase in compute budget, the KM scaling law
+favors a larger budget allocation in model size than the data
+size, while the Chinchilla scaling law argues that the two
+sizes should be increased in equal scales, i.e.,having similar
+values foraandbin Equation (3).
+Though with some restricted assumptions, these scaling
+laws provide an intuitive understanding of the scaling ef-
+fect, making it feasible to predict the performance of LLMs
+during training [46]. However, some abilities ( e.g.,in-context
+learning [55]) are unpredictable according to the scaling law,
+which can be observed only when the model size exceeds a
+certain level (as discussed below).
+6. Here,Nc,DcandCcare measured in the number of non-
+embedding parameters, the number of training tokens and the number
+of FP-days, respectively. According to the original paper [30], CcandC
+should be denoted by Cmin
+c andCmin, corresponding to the optimal
+use of compute. While, we use the simpliﬁed notations for ease of
+discussions.
+
+4
+Emergent Abilities of LLMs . In the literature [31], emergent
+abilities of LLMs are formally deﬁned as “the abilities that
+are not present in small models but arise in large models”,
+which is one of the most prominent features that distin-
+guish LLMs from previous PLMs. It further introduces a
+notable characteristic when emergent abilities occur [31]:
+performance rises signiﬁcantly above random when the
+scale reaches a certain level. By analogy, such an emergent
+pattern has close connections with the phenomenon of phase
+transition in physics [31, 58]. In principle, emergent abilities
+can be deﬁned in relation to some complex tasks [31, 59],
+while we are more concerned with general abilities that
+can be applied to solve a variety of tasks. Here, we brieﬂy
+introduce three typical emergent abilities for LLMs and
+representative models that possess such an ability7.
+In-context learning. The in-context learning (ICL) abil-
+ity is formally introduced by GPT-3 [55]: assuming that
+the language model has been provided with a natural
+language instruction and/or several task demonstrations,
+it can generate the expected output for the test instances
+by completing the word sequence of input text, without
+requiring additional training or gradient update8. Among
+the GPT-series models, the 175B GPT-3 model exhibited
+a strong ICL ability in general, but not the GPT-1 and
+GPT-2 models. While, such an ability also depends on the
+speciﬁc downstream task. For example, the ICL ability can
+emerge on the arithmetic tasks ( e.g., the 3-digit addition and
+subtraction) for the 13B GPT-3, but 175B GPT-3 even cannot
+work well on the Persian QA task [31].
+Instruction following. By ﬁne-tuning with a mixture of
+multi-task datasets formatted via natural language descrip-
+tions (called instruction tuning ), LLMs are shown to perform
+well on unseen tasks that are also described in the form
+of instructions [28, 61, 62]. With instruction tuning, LLMs
+are enabled to follow the task instructions for new tasks
+without using explicit examples, thus having an improved
+generalization ability. According to the experiments in [62],
+instruction-tuned LaMDA-PT [63] started to signiﬁcantly
+outperform the untuned one on unseen tasks when the
+model size reached 68B, but not for 8B or smaller model
+sizes. A recent study [64] found that a model size of 62B is
+at least required for PaLM to perform well on various tasks
+in four evaluation benchmarks ( i.e.,MMLU, BBH, TyDiQA
+and MGSM), though a much smaller size might sufﬁce for
+some speciﬁc tasks ( e.g., MMLU).
+Step-by-step reasoning. For small language models, it is
+usually difﬁcult to solve complex tasks that involve multiple
+reasoning steps, e.g., mathematical word problems. While,
+with the chain-of-thought (CoT) prompting strategy [33],
+LLMs can solve such tasks by utilizing the prompting
+mechanism that involves intermediate reasoning steps for
+deriving the ﬁnal answer. This ability is speculated to be
+potentially obtained by training on code [33, 47]. An empir-
+ical study [33] has shown that CoT prompting can bring
+7. It is difﬁcult to accurately examine the critical size for emergent
+abilities of LLMs ( i.e.,the minimum size to possess an ability), since it
+might vary for different models or tasks. Besides, existing studies often
+test emergent abilities on very limited model sizes for a speciﬁc LLM.
+For example, PaLM is often tested with three sizes of 8B, 62B and 540B.
+It is unclear about the model performance of the untested sizes.
+8. In a recent study [60], it also shows that in-context learning implic-
+itly performs meta-optimization through the attention mechanism.performance gains (on arithmetic reasoning benchmarks)
+when applied to PaLM and LaMDA variants with a model
+size larger than 60B, while its advantage over the standard
+prompting becomes more evident when the model size
+exceeds 100B. Besides, the performance improvement with
+CoT prompting seems to be also varied for different tasks,
+e.g., GSM8K>MAWPS>SWAMP for PaLM [33].
+Key Techniques for LLMs . It has been a long way that
+LLMs evolve into the current state: general and capable
+learners. In the development process, a number of impor-
+tant techniques are proposed, which largely improve the
+capacity of LLMs. Here, we brieﬂy list several important
+techniques that (potentially) lead to the success of LLMs, as
+follows.
+Scaling . As discussed in previous parts, there exists
+an evident scaling effect in Transformer language mod-
+els: larger model/data sizes and more training compute
+typically lead to an improved model capacity [30, 34]. As
+two representative models, GPT-3 and PaLM explored the
+scaling limits by increasing the model size to 175B and
+540B, respectively. Furthermore, since compute budget is
+usually limited, scaling laws can be employed to conduct a
+more compute-efﬁcient allocation of the compute resources.
+For example, Chinchilla (with more training tokens) outper-
+forms its counterpart model Gopher (with a larger model
+size) by increasing the data scale with the same compute
+budget [34]. While, it should be noted that data scaling
+should be with careful cleaning process, since the quality
+of pre-training data plays a key role in the model capacity.
+Training . Due to the huge model size, it is very chal-
+lenging to successfully train a capable LLM. Distributed
+training algorithms are needed to learn the network param-
+eters of LLMs, in which various parallel strategies are often
+jointly utilized. To support distributed training, several opti-
+mization frameworks have been released to facilitate the im-
+plementation and deployment of parallel algorithms, such
+as DeepSpeed [65] and Megatron-LM [66–68]. Besides, opti-
+mization tricks are also important for training stability and
+model performance, e.g., restart to overcome training loss
+spike [56] and mixed precision training [69]. More recently,
+GPT-4 [46] proposes to develop special infrastructure and
+optimization methods that reliably predict the performance
+of large models with much smaller models.
+Ability eliciting . After being pre-trained on large-scale
+corpora, LLMs are endowed with potential abilities as
+general-purpose task solvers. While, these abilities might
+not be explicitly exhibited when LLMs perform some spe-
+ciﬁc tasks. As the technical approach, it is useful to de-
+sign suitable task instructions or speciﬁc in-context learn-
+ing strategies to elicit such abilities. For instance, chain-
+of-thought prompting has been shown to be useful to
+solve complex reasoning tasks by including intermediate
+reasoning steps. Besides, we can further perform instruction
+tuning on LLMs with task descriptions expressed in natural
+language, for improving the generalizability of LLMs on
+unseen tasks. While, these techniques mainly correspond to
+the emergent abilities of LLMs, which may not show the
+same effect on small language models.
+Alignment tuning . Since LLMs are trained to capture
+the data characteristics of pre-training corpora (including
+
+5
+both high-quality and low-quality data), they are likely to
+generate toxic, biased, or even harmful content for humans.
+It is necessary to align LLMs with human values, e.g., helpful ,
+honest , and harmless . For this purpose, InstructGPT [61]
+designs an effective tuning approach that enables LLMs to
+follow the expected instructions, which utilizes the tech-
+nique of reinforcement learning with human feedback [61, 70].
+It incorporates human in the training loop with elaborately
+designed labeling strategies. ChatGPT is indeed developed
+on a similar technique to InstructGPT, which shows a strong
+alignment capacity in producing high-quality, harmless re-
+sponses, e.g., rejecting to answer insulting questions.
+Tools manipulation . In essence, LLMs are trained as text
+generators over massive plain text corpora, thus performing
+less well on the tasks that are not best expressed in the
+form of text ( e.g., numerical computation). Besides, their
+capacities are also limited to the pre-training data, e.g., the
+inability to capture up-to-date information. To tackle these
+issues, a recently proposed technique is to employ external
+tools to compensate for the deﬁciencies of LLMs [71, 72].
+For example, LLMs can utilize the calculator for accurate
+computation [71] and employ search engines to retrieve
+unknown information [72]. More recently, ChatGPT has
+enabled the mechanism of using external plugins (existing
+or newly created apps)9, which are by analogy with the “ eyes
+and ears ” of LLMs. Such a mechanism can broadly expand
+the scope of capacities for LLMs.
+Besides, many other factors ( e.g., the upgrade of hard-
+ware) also contribute to the success of LLMs. While, we
+limit our discussion to the major technical approaches and
+key ﬁndings for developing LLMs.
+2.2 Technical Evolution of GPT-series Models
+Due to the excellent capacity in communicating with hu-
+mans, ChatGPT has ignited the excitement of the AI com-
+munity since its release. ChatGPT is developed based on the
+powerful GPT model with specially optimized conversation
+capacities. Considering the ever-growing interest in Chat-
+GPT and GPT models, we add a special discussion about
+the technical evolution of the GPT-series models, to brieﬂy
+summarize the progress how they have been developed in
+the past years. Overall, the research of OpenAI on LLMs can
+be roughly divided into the following stages10.
+Early Explorations . According to one interview with Ilya
+Sutskever11(a co-founder and chief scientist of OpenAI),
+the idea of approaching intelligent systems with language
+models was already explored in the early days of Ope-
+nAI, while it was attempted with recurrent neural net-
+works (RNN) [104]. With the advent of Transformer, OpenAI
+developed two initial GPT models, namely GPT-1 [105] and
+GPT-2 [26], which can considered as the foundation to more
+powerful models subsequently i.e.,GPT-3 and GPT-4.
+9. https://openai.com/blog/chatgpt-plugins
+10. Note that the discussion of this part can be somewhat subjective.
+The overall viewpoints and summaries are made based on the under-
+standing of the authors by surveying the papers, blog articles, interview
+reports and APIs released by OpenAI.
+11. https://hackernoon.com/an-interview-with-ilya-sutskever-co-
+founder-of-openaiGPT-1 . In 2017, the Transformer model [22] was intro-
+duced by Google, and the OpenAI team quickly adapted
+their language modeling work to this new neural network
+architecture. They released the ﬁrst GPT model in 2018,
+i.e., GPT-1 [105], and coined the abbreviation term GPT
+as the model name, standing for Generative Pre-Training .
+GPT-1 was developed based on a generative, decoder-only
+Transformer architecture, and adopted a hybrid approach of
+unsupervised pretraining and supervised ﬁne-tuning. GPT-
+1 has set up the core architecture for the GPT-series models
+and established the underlying principle to model natural
+language text, i.e.,predicting the next word.
+GPT-2 . Following a similar architecture of GPT-1,
+GPT-2 [26] increased the parameter scale to 1.5B, which
+was trained with a large webpage dataset WebText. As
+claimed in the paper of GPT-2, it sought to perform
+tasks via unsupervised language modeling, without explicit
+ﬁne-tuning using labeled data. To motivate the approach,
+they introduced a probabilistic form for multi-task solving,
+i.e.,p(outputjinput;task )(similar approaches have been
+adopted in [106]), which predicts the output conditioned on
+the input and task information. To model this conditional
+probability, language text can be naturally employed as a
+uniﬁed way to format input, output and task information.
+In this way, the process of solving a task can be cast as a
+word prediction problem for generating the solution text.
+Further, they introduced a more formal claim for this idea:
+“Since the (task-speciﬁc) supervised objective is the same
+as the unsupervised (language modeling) objective but only
+evaluated on a subset of the sequence, the global minimum
+of the unsupervised objective is also the global minimum
+of the supervised objective (for various tasks)” [26]12. A
+basic understanding of this claim is that each (NLP) task
+can be considered as the word prediction problem based
+on a subset of the world text. Thus, unsupervised language
+modeling could be capable in solving various tasks, if it was
+trained to have sufﬁcient capacity in recovering the world
+text. These early discussion in GPT-2’s paper echoed in the
+interview of Ilya Sutskever by Jensen Huang: “What the
+neural network learns is some representation of the process
+that produced the text. This text is actually a projection of
+the world...the more accurate you are in predicting the next
+word, the higher the ﬁdelity, the more resolution you get in
+this process...”13.
+Capacity Leap . Although GPT-2 is intended to be an “un-
+supervised multitask learner”, it overall has an inferior
+performance compared with supervised ﬁne-tuning state-
+of-the-art methods. While, it has a relatively small model
+size, it has widely ﬁne-tuned in downstream tasks, espe-
+cially the dialog tasks [107, 108]. Based on GPT-2, GPT-3
+demonstrates a key capacity leap by scaling of the (nearly
+same) generative pre-training architecture.
+GPT-3 . GPT-3 [55] was released in 2020, which scaled
+the model parameters to an ever larger size of 175B. In
+the GPT-3’s paper, it formally introduced the concept of
+12. To better understand this sentence, we put some explanation
+words in parentheses.
+13. https://lifearchitect.ai/ilya/
+
+6
+2020
+20232021
+1-4
+5-8
+9-10
+1-3
+4-6
+7-10
+1 1-12
+T5
+GPT -3
+WebGPT
+BLOOMZ
+GalaticamT0LLaMA
+2019
+FLAN
+InstructGPT
+GPT -NeoX-20BCodeGen
+OPT
+OPT -IML
+MT-NLGT0
+Tk-Instruct
+1-4
+GPT -4
+GShard
+UL2
+PaLM Flan-T5
+Flan-PaLMSparr ow
+ChatGPT
+Ernie 3.0 T itan
+Yuan 1.0
+PanGu-Σ
+Gopher
+GLaMmT5
+ PanGu- 𝛂
+PLUG
+BardLaMDA
+CPM-2
+HyperCLOV APublicly A vailable
+CodexJurassic-1
+Ernie 3.0
+Anthr opic
+NLLBCoher ePythia
+Vicuna
+LuminousYaLM1 1-12
+2022
+GLM
+AlexaTMBLOOM
+WeLM
+AlphaCode
+Chinchilla
+CodeGeeX
+Fig. 1. A timeline of existing large language models (having a size larger than 10B) in recent years. The timeline was established mainly according
+to the release date ( e.g., the submission date to arXiv) of the technical paper for a model. If there was not a corresponding paper, we set the date
+of a model as the earliest time of its public release or announcement. We mark the LLMs with publicly available model checkpoints in yellow color.
+Due to the space limit of the ﬁgure, we only include the LLMs with publicly reported evaluation results.
+in-context learning (ICL)14, which utilizes LLMs in a few-
+shot or zero-shot way. ICL can teach (or instruct) LLMs to
+understand the tasks in the form of natural language text.
+With ICL, the pre-training and utilization of LLMs converge
+to the same language modeling paradigm: pre-training pre-
+dicts the following text sequence conditioned on the context,
+while ICL predicts the correct task solution, which can be
+also formatted as a text sequence, given the task description
+and demonstrations. GPT-3 not only demonstrates very ex-
+cellent performance in a variety of NLP tasks, but also on a
+number of specially designed tasks that require the abilities
+of reasoning or domain adaptation. Although the GPT-3’s
+paper does not explicitly discuss the emergent abilities of
+LLMs, we can observe large performance leap that might
+transcend the basic scaling law [30], e.g., larger models have
+signiﬁcantly stronger ICL ability (illustrated in the original
+Figure 1.2 of the GPT-3’s paper [55]). Overall, GPT-3 can be
+viewed as a remarkable landmark in the journey evolving
+from PLMs to LLMs. It has empirically proved that scaling
+the neural networks to a signiﬁcant size can lead to a huge
+increase in model capacity.
+Capacity Enhancement . Due to the strong capacities, GPT-
+3 has been the base model to develop even more capable
+LLMs for OpenAI. Overall, OpenAI has explored two major
+approaches to further improving the GPT-3 model, i.e.,train-
+ing on code data and alignment with human preference,
+which are detailed as follows.
+Training on code data . A major limitation of the original
+14. GPT-2 essentially used ICL for unsupervised task learning,
+though it wasn’t called ICL at that time.GPT-3 model (pre-trained on plain text) lies in the lack of
+the reasoning ability on complex tasks, e.g., completing the
+code and solving math problems. To enhance this ability,
+Codex [89] was introduced by OpenAI in July 2021, which
+was a GPT model ﬁne-tuned on a large corpus of GitHub
+code. It demonstrated that Codex can solve very difﬁcult
+programming problems, and also lead to a signiﬁcant per-
+formance improvement in solving math problems [109]. Fur-
+ther, a contrastive approach [110] to training text and code
+embedding was reported in January 2022, which was shown
+to improve a series of related tasks ( i.e.,linear-probe classi-
+ﬁcation, text search and code search). Actually, the GPT-3.5
+models are developed based on a code-based GPT model
+(i.e.,code-davinci-002 ), which indicates that training on
+code data is a very useful practice to improve the model
+capacity of GPT models, especially the reasoning ability.
+Besides, there is also a speculation that training on code data
+can greatly increase the chain-of-thought prompting abilities
+of LLMs [47], while it is still worth further investigation with
+more thorough veriﬁcation.
+Human alignment . The related research of human
+alignment can be dated back to the year 2017 (or earlier)
+for OpenAI: a blog article entitled “learning from human
+preferences”15was posted on the OpenAI blog describing
+a work that applied reinforcement learning (RL) to learn
+from the preference comparisons annotated by humans [70]
+(similar to the reward training step in the aligning algorithm
+of InstructGPT in Figure 6). Shortly after the release of this
+RL paper [70], the paper of the Proximal Policy Optimiza-
+15. https://openai.com/research/learning-from-human-preferences

@@ -206,3 +206,4 @@ A Survey on In-context Learning,31 Dec 2022,1 Jun 2023,https://arxiv.org/pdf/230
 In-Context Instruction Learning,28 Feb 2023,28 Feb 2023,https://arxiv.org/pdf/2302.14691
 Ask Me Anything: A simple strategy for prompting language models,5 Oct 2022,20 Nov 2022,https://arxiv.org/pdf/2210.02441
 Prompting as Probing: Using Language Models for Knowledge Base Construction,23 Aug 2022,25 Aug 2022,https://arxiv.org/pdf/2208.11057
+Scaling Transformer to 1M tokens and beyond with RMT,19 Apr 2023,19 Apr 2023,https://arxiv.org/pdf/2304.11062

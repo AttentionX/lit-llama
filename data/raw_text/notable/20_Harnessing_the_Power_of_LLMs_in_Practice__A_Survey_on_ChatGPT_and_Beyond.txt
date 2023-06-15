@@ -1,0 +1,243 @@
+Harnessing the Power of LLMs in Practice: A Survey on ChatGPT and Beyond
+JINGFENG YANG∗,Amazon, USA
+HONGYE JIN∗,Department of Computer Science and Engineering, Texas A&M University, USA
+RUIXIANG TANG∗,Department of Computer Science, Rice University, USA
+XIAOTIAN HAN∗,Department of Computer Science and Engineering, Texas A&M University, USA
+QIZHANG FENG∗,Department of Computer Science and Engineering, Texas A&M University, USA
+HAOMING JIANG, Amazon, USA
+BING YIN, Amazon, USA
+XIA HU, Department of Computer Science, Rice University, USA
+This paper presents a comprehensive and practical guide for practitioners and end-users working with Large Language Models (LLMs)
+in their downstream natural language processing (NLP) tasks. We provide discussions and insights into the usage of LLMs from
+the perspectives of models, data, and downstream tasks. Firstly, we offer an introduction and brief summary of current GPT- and
+BERT-style LLMs. Then, we discuss the influence of pre-training data, training data, and test data. Most importantly, we provide a
+detailed discussion about the use and non-use cases of large language models for various natural language processing tasks, such as
+knowledge-intensive tasks, traditional natural language understanding tasks, natural language generation tasks, emergent abilities,
+and considerations for specific tasks. We present various use cases and non-use cases to illustrate the practical applications and
+limitations of LLMs in real-world scenarios. We also try to understand the importance of data and the specific challenges associated
+with each NLP task. Furthermore, we explore the impact of spurious biases on LLMs and delve into other essential considerations, such
+as efficiency, cost, and latency, to ensure a comprehensive understanding of deploying LLMs in practice. This comprehensive guide
+aims to provide researchers and practitioners with valuable insights and best practices for working with LLMs, thereby enabling the
+successful implementation of these models in a wide range of NLP tasks. A curated list of practical guide resources of LLMs, regularly
+updated, can be found at https://github.com/Mooler0410/LLMsPracticalGuide.
+CCS Concepts: •Computing methodologies →Natural language processing ;Natural language generation ;Machine trans-
+lation .
+Additional Key Words and Phrases: Large Language Models, Neural Language Processing, Practical Guide, ChatGPT
+1 INTRODUCTION
+In recent years, the rapid development of Large language Models has been revolutionizing the field of natural language
+processing [ 12,128,131]. These powerful models have shown great potential in addressing a variety of NLP tasks,
+ranging from natural language understanding (NLU) to generation tasks, even paving the way to Artificial General
+Intelligence (AGI). However, utilizing these models effectively and efficiently requires a practical understanding of their
+capabilities and limitations, as well as the data and tasks involved in NLP.
+To provide a guide for partitioners and end-users, this work focuses on the practical aspects of working with LLMs
+in downstream NLP tasks. This guide aims to provide practical advice on why or why not to choose LLMs for a given
+∗These authors contributed equally.
+Authors’ addresses: Jingfeng Yang, jingfengyangpku@gmail.com, Amazon, USA; Hongye Jin, jhy0410@tamu.edu, Department of Computer Science
+and Engineering, Texas A&M University, USA; Ruixiang Tang, rt39@rice.edu, Department of Computer Science, Rice University, USA; Xiaotian Han,
+han@tamu.edu, Department of Computer Science and Engineering, Texas A&M University, USA; Qizhang Feng, qf31@tamu.edu, Department of Computer
+Science and Engineering, Texas A&M University, USA; Haoming Jiang, jhaoming@amazon.com, Amazon, USA; Bing Yin, alexbyin@amazon.com, Amazon,
+USA; Xia Hu, xia.hu@rice.edu, Department of Computer Science, Rice University, USA.
+1arXiv:2304.13712v2  [cs.CL]  27 Apr 2023
+
+2 Jingfeng Yang, Hongye Jin, Ruixiang Tang, Xiaotian Han, Qizhang Feng, Haoming Jiang, Bing Yin, and Xia Hu
+task, as well as guidance on how to select the most suitable LLM, taking into account factors such as model sizes,
+computational requirements, and the availability of domain-specific pre-trained models. This work offers a thorough
+understanding of LLMs from a practical perspective, therefore, empowers practitioners and end-users with the practical
+knowledge needed to successfully leverage the power of LLMs for their own NLP tasks.
+Our work is structured as follows. First, our work offers a brief introduction to LLMs by discussing the most important
+models, such as GPT-style and BERT-style architectures. Then, we delve into the critical factors that influence model
+performance from the data perspective, including pre-training data, training/tuning data, and test data. Last and
+most importantly, we dive deep into various concrete NLP tasks, offering insights into the applicability of LLMs for
+knowledge-intensive tasks, traditional NLU tasks, and generation tasks, along with the emergent abilities that these
+models possess and challenging real-world scenarios. We provide detailed examples to highlight both the successful use
+cases and the limitations of LLMs in practice.
+To analyze the abilities of large language models, we compare them with fine-tuned models. As of present, there
+is no universally recognized definition for LLMs and fine-tuned models. With consideration to practical utility, in
+our article, the definitions of them are proposed as: LLMs are huge language models pretrained on large amounts of
+datasets without tuning on data for specific tasks; fine-tuned models are typically smaller language models which are
+also pretrained and then further tuned on a smaller, task-specific dataset to optimize their performance on that task1.
+This work summarizes the following main practical guides for using LLMs:
+•Natural language understanding. Employ the exceptional generalization ability of LLMs when facing out-of-
+distribution data or with very few training data.
+•Natural language generation. Utilize LLMs’ capabilities to create coherent, contextually relevant, and high-
+quality text for various applications.
+•Knowledge-intensive tasks. Leverage the extensive knowledge stored in LLMs for tasks requiring domain-
+specific expertise or general world knowledge.
+•Reasoning ability. Understand and harness the reasoning capabilities of LLMs to improve decision-making
+and problem-solving in various contexts.
+2 PRACTICAL GUIDE FOR MODELS
+This section provides a brief introduction to state-of-the-art LLMs. These models differ in their training strategies,
+model architectures, and use cases. To provide a clearer understanding of the LLM landscape, we categorize them into
+two types: encoder-decoder or encoder-only language models and decoder-only language models. In Figure 1, we show
+the detailed evolution process of language models. From the evolutionary tree, we make the following interesting
+observations:
+a)Decoder-only models have been gradually dominating the development of LLMs. At the early stage of LLMs
+development, decoder-only models were not as popular as encoder-only and encoder-decoder models. However,
+after 2021, with the introduction of game-changing LLMs - GPT-3, decoder-only models experienced a significant
+boom. Meanwhile, after the initial explosive growth brought about by BERT, encoder-only models gradually
+began to fade away.
+1From a practical standpoint, we consider models with less than 20B parameters to be fine-tuned models. While it’s possible to fine-tune even larger
+models like PlaM (540B), in reality, it can be quite challenging, particularly for academic research labs and small teams. Fine-tuning a model with 3B
+parameters can still be a daunting task for many individuals or organizations.
+
+Harnessing the Power of LLMs in Practice: A Survey on ChatGPT and Beyond 3
+2023
+2022
+2019201820202021
+BERTALBERTDeBERTaELECTRAT5BARTFlanT5
+mT5T0
+GPT-1GPT-2XLNet
+OPTBLOOM
+GPT-NeoGPT-NeoXGPT-J
+LLaMA
+YaLMGalactica
+RoBERTa
+Open-Source
+ERNIEDistillBERT
+Switch
+BLOOMZ
+Word2VecGloVeFastTextTk
+OPT-IML
+Encoder-OnlyDecoder-OnlyEncoder-Decoder
+GLM
+ChatGLM
+ST-MoE
+ELMo
+ULMFiT
+Fig. 1. The evolutionary tree of modern LLMs traces the development of language models in recent years and highlights some of the
+most well-known models. Models on the same branch have closer relationships. Transformer-based models are shown in non-grey
+colors: decoder-only models in the blue branch, encoder-only models in the pink branch, and encoder-decoder models in the green
+branch. The vertical position of the models on the timeline represents their release dates. Open-source models are represented by
+solid squares, while closed-source models are represented by hollow ones. The stacked bar plot in the bottom right corner shows the
+number of models from various companies and institutions.
+b)OpenAI consistently maintains its leadership position in LLM, both currently and potentially in the future. Other
+companies and institutions are struggling to catch up with OpenAI in developing models comparable to GPT-3
+and the current GPT-4. This leadership position may be attributed to OpenAI’s steadfast commitment to its
+technical path, even when it was not widely acknowledged initially.
+c) Meta contributes significantly to open-source LLMs and promotes research of LLMs. When considering contri-
+butions to the open-source community, particularly those related to LLMs, Meta stands out as one of the most
+generous commercial companies, as all the LLMs developed by Meta are open-sourced.
+d)LLMs exhibit a tendency towards closed-sourcing. In the early stages of LLM development (before 2020), the
+majority of models were open-sourced. However, with the introduction of GPT-3, companies have increasingly
+
+4 Jingfeng Yang, Hongye Jin, Ruixiang Tang, Xiaotian Han, Qizhang Feng, Haoming Jiang, Bing Yin, and Xia Hu
+Table 1. Summary of Large Language Models.
+Characteristic LLMs
+Encoder-Decoder or Encoder-onlyELMo [80], BERT [28], RoBERTa [65],
+DistilBERT [90], BioBERT [57], XLM [54],
+Xlnet [119], ALBERT [55], ELECTRA [24],
+T5 [84], GLM [ 123], XLM-E [ 20], ST-MoE [ 133],
+AlexaTM [95]Training: Masked Language Models
+Model type: Discriminative
+(BERT-style) Pretrain task: Predict masked words
+Decoder-onlyGPT-3 [16], OPT [126]. PaLM [22],
+BLOOM [92], MT-NLG [93],
+GLaM [32],Gopher [83], chinchilla [41],
+LaMDA [102], GPT-J [107], LLaMA [103],
+GPT-4 [76], BloombergGPT [117]Training Autoregressive Language Models
+Model type: Generative
+(GPT-style) Pretrain task: Predict next word
+opted to close-source their models, such as PaLM, LaMDA, and GPT-4. Consequently, it has become more difficult
+for academic researchers to conduct experiments on LLM training. As a result, API-based research could become
+the predominant method in the academic community.
+e)Encoder-decoder models remain promising, as this type of architecture is still being actively explored, and
+most of them are open-sourced. Google has made substantial contributions to open-source encoder-decoder
+architectures. However, the flexibility and versatility of decoder-only models seem to make Google’s insistence
+on this direction less promising.
+We also briefly summarize the characteristics and the representative LLMs of each type in Table 1.
+2.1 BERT-style Language Models: Encoder-Decoder or Encoder-only
+As natural language data is readily available and unsupervised training paradigms have been proposed to better utilize
+extremely large datasets, this motivates the unsupervised learning of natural language. One common approach is to
+predict masked words in a sentence while considering the surrounding context. This training paradigm is known as the
+Masked Language Model. This type of training allows the model to develop a deeper understanding of the relationships
+between words and the context in which they are used. These models are trained on a large corpus of texts using
+techniques such as the Transformer architecture and have achieved state-of-the-art results in many NLP tasks, such as
+sentiment analysis and named entity recognition. Notable examples of Masked Language Models include BERT [ 28],
+RoBERTa [ 65], and T5 [ 84]. MLMs have become an important tool in the field of natural language processing due to
+their success in a wide range of tasks.
+2.2 GPT-style Language Models: Decoder-only
+Although language models are typically task-agnostic in architecture, these methods require fine-tuning on datasets of
+the specific downstream task. Researchers found that scaling up language models significantly improves the few-shot,
+even zero-shot performance [ 16]. The most successful models for better few-shot and zero-show performance are
+Autoregressive Language Models, which are trained by generating the next word in a sequence given the preceding
+words. These models have been widely used for downstream tasks such as text generation and question answering.
+Examples of Autoregressive Language Models include GPT-3 [ 16], OPT [ 126], PaLM [ 22], and BLOOM [ 92]. The game
+changer, GPT-3, for the first time, demonstrated reasonable few-/zero-shot performance via prompting and in-context
+learning, thus showing the superiority of autoregressive language models. There are also models such as CodeX [ 2]
+
+Harnessing the Power of LLMs in Practice: A Survey on ChatGPT and Beyond 5
+that are optimized for specific tasks such as code generation, BloombergGPT [ 117] for the financial domain. The recent
+breakthrough is ChatGPT, which refines GPT-3 specifically for conversational tasks, resulting in more interactive,
+coherent, and context-aware conversational for various real-world applications.
+3 PRACTICAL GUIDE FOR DATA
+In this section, we’ll be discussing the critical role that data plays in selecting appropriate models for downstream
+tasks. The impact of data on the models’ effectiveness starts during the pre-training stage and continues through to the
+training and inference stages.
+Remark 1
+(1)LLMs generalize better than fine-tuned models in downstream tasks facing out-of-distribution data, such as
+adversarial examples and domain shifts.
+(2)LLMs are preferable to fine-tuned models when working with limited annotated data, and both can be
+reasonable choices when abundant annotated data is available, depending on specific task requirements.
+(3) It’s advisable to choose models pre-trained on fields of data that are similar to downstream tasks.
+3.1 Pretraining data
+Pre-training data plays a pivotal role in the development of large language models. As the foundation of remarkable
+capabilities [ 5,47] of LLMs, the quality, quantitative, and diversity of pre-training data influence the performance
+of LLMs significantly [ 124]. The commonly used pretraining data consists of a myriad of text sources, including
+books, articles, and websites. The data is carefully curated to ensure a comprehensive representation of human
+knowledge, linguistic nuances, and cultural perspectives. The importance of pretraining data lies in its capacity to
+inform the language model with a rich understanding of word knowledge, grammar, syntax, and semantics, as well
+as the ability to recognize context and generate coherent responses. The diversity of pretraining data also plays a
+crucial role in shaping the model’s performance, and the selection of LLMs highly depends on the components of the
+pretraining data. For example, PaLM [ 22] and BLOOM [ 92] excel in multilingual tasks and machine translation with an
+abundance of multilingual pretraining data. Moreover, PaLM’s performance in Question Answering tasks is enhanced
+by incorporating a considerable amount of social media conversations and Books corpus [ 22]. Likewise, code execution
+and code completion capabilities of GPT-3.5 (code-davinci-002) are amplified by the integration of code data in its
+pretraining dataset. In brief, when selecting LLMs for downstream tasks, it is advisable to choose the model pre-trained
+on a similar field of data.
+3.2 Finetuning data
+When deploying a model for downstream tasks, it is essential to consider three primary scenarios based on the availability
+of annotated data: zero, few, and abundant. In this section, we provide a succinct overview of the appropriate models to
+employ for each scenario.
+Zero annotated data : In scenarios where annotated data is unavailable, utilizing LLMs in a zero-shot setting proves to
+be the most suitable approach. LLMs have been shown to outperform previous zero-shot methods [ 120]. Additionally,
+the absence of a parameter update process ensures that catastrophic forgetting [ 49] is avoided since the language model
+parameters remain unaltered.
+
+6 Jingfeng Yang, Hongye Jin, Ruixiang Tang, Xiaotian Han, Qizhang Feng, Haoming Jiang, Bing Yin, and Xia Hu
+Few annotated data : In this case, the few-shot examples are directly incorporated in the input prompt of LLMs, which
+is named as in-context learning, and these examples can effectively guide LLMs to generalize to the task. As reported
+in [16], one-shot and few-shot performance make significant gains, even matching the performance of the SOTA
+fine-tuned open-domain models. And LLMs’ zero/few-shot ability can be improved further by scaling [ 16]. Alternatively,
+some few-shot learning methods are invented to enhance fine-tuned models, such as meta-learning [ 56] or transfer
+learning [ 88]. However, performance might be inferior compared to using LLMs due to fine-tuned models’ smaller scale
+and overfitting.
+Abundant annotated data : With a substantial amount of annotated data for a particular task available, both fine-tuned
+models and LLMs can be considered. In most cases, fine-tuning the model can fit the data pretty well. Although, LLMs
+can be used to meet some constraints such as privacy [ 99].In this scenario, the choice between using a fine-tuned model
+or a LLM is task-specific and also depends on many factors, including desired performance, computational resources,
+and deployment constraints.
+In a brief summary: LLMs are more versatile w.r.t. the data availability, while fine-tuned models can be considered
+with abundant annotated data.
+3.3 Test data/user data
+When deploying LLMs for downstream tasks, we often face challenges stemming from distributional differences between
+the test/user data and that of the training data. These disparities may encompass domain shifts [ 132], out-of-distribution
+variations [ 31], or even adversarial examples [ 82]. Such challenges significantly hinder fine-tuned modes’ effectiveness
+in real-world applications. They fit into a specific distribution and have a poor ability to generalize to OOD data.
+However, LLMs perform quite well facing such scenarios because they do not have an explicit fitting process. Moreover,
+recent advancements have further enhanced the ability of language models in this regard. The Reinforcement Learning
+from Human Feedback (RLHF) method has notably enhanced LLMs’ generalization capabilities [ 77]. For example,
+InstructGPT demonstrates proficiency in following various instructions for a wide range of tasks and occasionally
+complying with instructions in different languages, even though such instructions are scarce. Similarly, ChatGPT
+exhibits consistent advantages on most adversarial and out-of-distribution (OOD) classification and translation tasks
+[109]. Its superiority in understanding dialogue-related texts led to an impressive performance on the DDXPlus dataset
+[101], a medical diagnosis dataset designed for OOD evaluation.
+4 PRACTICAL GUIDE FOR NLP TASKS
+In this section, we discuss in detail the use cases and no use cases for LLMs in various downstream NLP tasks and the
+corresponding model abilities. And in Figure 2, we summarize all discussions into a decision flow. It can be a guide for a
+quick decision while facing a task.
+4.1 Traditional NLU tasks
+Traditional NLU tasks are some fundamental tasks in NLP including text classification, named entity recognition (NER),
+entailment prediction, and so on. Many of them are designed to serve as intermediate steps in larger AI systems, such
+as NER for knowledge graph construction.
+1As we mention in Section 1, LLMs are pretrained on large and diverse datasets without fine-tuning, while fine-tuned models are typically pretrained on
+a large dataset and then further trained on a smaller, task-specific dataset to optimize their performance on that task.

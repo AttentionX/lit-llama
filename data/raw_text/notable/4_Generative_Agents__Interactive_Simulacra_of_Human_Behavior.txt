@@ -1,0 +1,551 @@
+Generative Agents: Interactive Simulacra of Human Behavior
+Joon Sung Park
+Stanford University
+Stanford, USA
+joonspk@stanford.eduJoseph C. O’Brien
+Stanford University
+Stanford, USA
+jobrien3@stanford.eduCarrie J. Cai
+Google Research
+Mountain View, CA, USA
+cjcai@google.com
+Meredith Ringel Morris
+Google Research
+Seattle, WA, USA
+merrie@google.comPercy Liang
+Stanford University
+Stanford, USA
+pliang@cs.stanford.eduMichael S. Bernstein
+Stanford University
+Stanford, USA
+msb@cs.stanford.edu
+Figure 1: Generative agents create believable simulacra of human behavior for interactive applications. In this work, we demon-
+strate generative agents by populating a sandbox environment, reminiscent of The Sims, with twenty-five agents. Users can
+observe and intervene as agents they plan their days, share news, form relationships, and coordinate group activities.
+ABSTRACT
+Believable proxies of human behavior can empower interactive
+applications ranging from immersive environments to rehearsal
+spaces for interpersonal communication to prototyping tools. In
+this paper, we introduce generative agents—computational software
+Permission to make digital or hard copies of all or part of this work for personal or
+classroom use is granted without fee provided that copies are not made or distributed
+for profit or commercial advantage and that copies bear this notice and the full citation
+on the first page. Copyrights for components of this work owned by others than the
+author(s) must be honored. Abstracting with credit is permitted. To copy otherwise, or
+republish, to post on servers or to redistribute to lists, requires prior specific permission
+and/or a fee. Request permissions from permissions@acm.org.
+arXiv, April, 2023,
+©2023 Copyright held by the owner/author(s). Publication rights licensed to ACM.
+ACM ISBN xx-x-xxxx-xxxx-x/xx/xx. . . $15.00
+https://doi.org/xx.xx/xx.xxagents that simulate believable human behavior. Generative agents
+wake up, cook breakfast, and head to work; artists paint, while
+authors write; they form opinions, notice each other, and initiate
+conversations; they remember and reflect on days past as they plan
+the next day. To enable generative agents, we describe an architec-
+ture that extends a large language model to store a complete record
+of the agent’s experiences using natural language, synthesize those
+memories over time into higher-level reflections, and retrieve them
+dynamically to plan behavior. We instantiate generative agents
+to populate an interactive sandbox environment inspired by The
+Sims, where end users can interact with a small town of twenty five
+agents using natural language. In an evaluation, these generative
+agents produce believable individual and emergent social behav-
+iors: for example, starting with only a single user-specified notionarXiv:2304.03442v1  [cs.HC]  7 Apr 2023
+
+arXiv, April, 2023, J.S. Park, J.C. O’Brien, C.J. Cai, M. Morris, P. Liang, M.S. Bernstein
+that one agent wants to throw a Valentine’s Day party, the agents
+autonomously spread invitations to the party over the next two
+days, make new acquaintances, ask each other out on dates to the
+party, and coordinate to show up for the party together at the right
+time. We demonstrate through ablation that the components of
+our agent architecture—observation, planning, and reflection—each
+contribute critically to the believability of agent behavior. By fusing
+large language models with computational, interactive agents, this
+work introduces architectural and interaction patterns for enabling
+believable simulations of human behavior.
+CCS CONCEPTS
+•Human-centered computing →Interactive systems and tools ;
+•Computing methodologies →Natural language processing .
+KEYWORDS
+Human-AI Interaction, agents, generative AI, large language models
+ACM Reference Format:
+Joon Sung Park, Joseph C. O’Brien, Carrie J. Cai, Meredith Ringel Morris,
+Percy Liang, and Michael S. Bernstein. 2023. Generative Agents: Interactive
+Simulacra of Human Behavior. In .ACM, New York, NY, USA, 22 pages.
+https://doi.org/xx.xx/xx.xx
+1 INTRODUCTION
+How might we craft an interactive artificial society that reflects
+believable human behavior? From sandbox games such as The Sims
+to applications such as cognitive models [ 21] and virtual environ-
+ments [ 9,58], for over four decades researchers and practitioners
+have envisioned computational agents that can serve as believ-
+able proxies of human behavior. In these visions, computationally-
+powered agents act consistently with their past experiences and
+react believably to their environments. Such simulations of human
+behavior could populate virtual spaces and communities with real-
+istic social phenomena [ 26,79], train people how to handle rare yet
+difficult interpersonal situations [ 43,51,93], test social science theo-
+ries [ 11,45], craft model human processors for theory and usability
+testing [ 21,38,50], power ubiquitous computing applications [ 30]
+and social robots [ 9,13], and underpin non-playable game charac-
+ters [ 58,84] that can navigate complex human relationships in an
+open world.
+However, the space of human behavior is vast and complex [ 84,
+108]. Despite striking progress in large language models [ 17] that
+can simulate believable human behavior at a single time point [ 38,
+79], fully general agents that ensure long-term coherence would
+be better suited by architectures that manage constantly-growing
+memories as new interactions, conflicts, and events arise and fade
+over time, while handling cascading social dynamics that unfold
+between multiple agents. Success requires an approach that can
+retrieve relevant events and interactions over a long period, reflect
+on those memories to generalize and draw higher-level inferences,
+and apply that reasoning to create plans and reactions that both
+make sense in the moment and in the longer-term arc of the agent’s
+behavior.
+In this paper, we introduce generative agents —agents that draw
+on generative models to simulate believable human behavior—anddemonstrate that they produce believable simulacra of both in-
+dividual and emergent group behavior. Generative agents draw
+a wide variety of inferences about themselves, other agents, and
+their environment; they create daily plans that reflect their char-
+acteristics and experiences, act out those plans, react, and re-plan
+when appropriate; they respond when the end user changes their
+environment or commands them in natural language. For instance,
+generative agents turn off the stove when they see that their break-
+fast is burning, wait outside the bathroom if it is occupied, and
+stop to chat when they meet another agent they want to talk to.
+A society full of generative agents is marked by emergent social
+dynamics where new relationships are formed, information diffuses,
+and coordination arises across agents.
+To enable generative agents, we describe an agent architecture
+that stores, synthesizes, and applies relevant memories to generate
+believable behavior using a large language model. Our architecture
+comprises three main components. The first is the memory stream ,
+a long-term memory module that records, in natural language, a
+comprehensive list of the agent’s experiences. The retrieval model
+combines relevance, recency, and importance to surface the records
+that are needed to inform the agent’s moment-to-moment behavior.
+The second is reflection , which synthesizes memories into higher-
+level inferences over time, enabling the agent to draw conclusions
+about itself and others to better guide its behavior. The third is
+planning , which translates those conclusions and the current en-
+vironment into high-level action plans and then recursively into
+detailed behaviors for action and reaction. These reflections and
+plans are fed back into the memory stream to influence the agent’s
+future behavior.
+This architecture suggests applications in multiple domains, from
+role-play and social prototyping, to virtual worlds and games. In
+social role-play scenarios (e.g. interview preparation), a user could
+safely rehearse difficult, conflict-laden conversations. When pro-
+totyping social platforms, a designer could go beyond temporary
+personas to prototype dynamic, complex interactions that unfold
+over time. For the purposes of this paper, we focus on the ability to
+create a small, interactive society of agents inspired by games such
+as The Sims.1By connecting our architecture to the ChatGPT large
+language model [ 76], we manifest a small society of twenty five
+agents in a game environment. End users can observe and interact
+with these agents. If an end user or developer wanted the town
+to host an in-game Valentine’s Day party, for example, traditional
+game environments would require scripting tens of characters’ be-
+havior manually. We demonstrate that, with generative agents, it
+is sufficient to simply tell one agent that she wants to throw a
+party. Despite many potential points of failure—the party planner
+must remember to tell other agents about the party, attendees must
+remember the invitation, those who remember must decide to ac-
+tually show up, and other possible points of failure—agents in our
+environment succeed. They spread the word about the party and
+then show up, with one agent even asking another agent on a date
+to the party, all from this single user-generated seed suggestion.
+We conducted two evaluations of generative agents: a controlled
+evaluation to test whether the agents produce believable individual
+1A demonstration of an actual simulation of the generative agent society can be viewed
+at the following link: https://reverie.herokuapp.com/arXiv_Demo/
+
+Generative Agents arXiv, April, 2023,
+behaviors in isolation, and an end-to-end evaluation where the
+generative agents interacted with each other in open-ended ways
+over two days of game time to understand their stability and emer-
+gent social behaviors. In the technical evaluation, we leverage a
+methodological opportunity to evaluate an agent’s knowledge and
+behavior by “interviewing” it in natural language to probe agents’
+ability to stay in character, remember, plan, react, and reflect accu-
+rately. We compared several ablations that limit agents’ access to
+memory, reflection, and planning. We observe that each of these
+components is critical to strong performance across these inter-
+view tasks. Across the technical and the end-to-end evaluation, the
+most common errors arose when the agent failed to retrieve rele-
+vant memories, fabricated embellishments to the agent’s memory,
+or inherited overly formal speech or behavior from the language
+model.
+In sum, this paper provides the following contributions:
+•Generative agents , believable simulacra of human behavior
+that are dynamically conditioned on agents’ changing expe-
+riences and environment.
+•A novel architecture that makes it possible for generative
+agents to remember, retrieve, reflect, interact with other
+agents, and plan through dynamically evolving circumstances.
+The architecture leverages the powerful prompting capabili-
+ties of large language models and supplements those capa-
+bilities to support longer-term agent coherence, the ability
+to manage dynamically-evolving memory, and recursively
+produce more generations.
+•Two evaluations (a controlled evaluation and end-to-end
+evaluation) that establish causal effects of the importance
+of components of the architecture, as well as identify break-
+downs arising from, e.g., improper memory retrieval.
+•Discussion of the opportunities and ethical and societal risks
+of generative agents in interactive systems. We argue that
+these agents should be tuned to mitigate the risk of users
+forming parasocial relationships, logged to mitigate risks
+stemming from deepfakes and tailored persuasion, and ap-
+plied in ways that complement rather than replace human
+stakeholders in design processes.
+2 RELATED WORK
+In this section, we reflect on the prior literature in human-AI in-
+teraction and situate within its canon the agenda of building be-
+lievable proxies of human behavior. This agenda, once hailed as a
+north star in interaction, game, and artificial intelligence communi-
+ties [ 9,58,84,85], has remained challenging due to the complexity
+of human behavior [ 16,108]. We synthesize this research to suggest
+that large language models, though not sufficient by themselves,
+open up a new angle for creating believable agents when leveraged
+using the appropriate architecture.
+2.1 Human-AI Interaction
+Interactive artificial intelligence systems aim to combine human in-
+sights and capabilities in computational artifacts that can augment
+their users [ 3,29]. A long line of work has explored ways to allow
+users to interactively specify model behavior. For instance, Crayonsdemonstrated an early vision of interactive machine learning, allow-
+ing non-expert users to train classifiers [ 29]. Further work helped to
+articulate how end users might describe their classification goals to
+the system through examples [ 33] and/or demonstration [ 31]. More
+recent work has extended these explorations to deep learning [ 62]
+and prompt-based authoring [49, 66, 106].
+Meanwhile, a persistent thread of research has advanced the case
+for language- and agent-based interaction in human-computer in-
+teraction. Formative work such as SHRDLU [ 103] and ELIZA [ 102]
+demonstrated the opportunity and the risks of natural language
+interaction with computing systems. As research progressed, it
+became clear that autonomous agents could offer new metaphors
+for delegation and interaction [ 67], but the delegation lines be-
+tween humans and agents have continued to be debated and refined
+[46,88,89]. Recently, this technology has become stable enough
+that it has become possible for agents to interact via natural lan-
+guage in large and complex online social environments (e.g., [ 54]).
+Natural language interaction offers a novel modality that can ex-
+tend user abilities in domains such as photo editing [ 2,34,64] and
+code editing [87].
+We convene these threads of work to show that we can now
+create agents that proxy human behavior for interactive systems,
+and interact with them via natural language. In doing so, this
+work re-opens the door to examining foundational HCI questions
+around cognitive models such as GOMS and KLM [ 21,22], around
+prototyping tools [ 79], and around ubiquitous computing applica-
+tions [25, 30, 100].
+2.2 Believable Proxies of Human Behavior
+Prior literature has described believability , orbelievable agents , as a
+central design and engineering goal. Believable agents are designed
+to provide an illusion of life and present a facade of realism in the
+way they appear to make decisions and act on their own volition,
+similar to the characters in Disney movies [ 9,95]. These agents can
+populate and perceive an open-world environment like the one we
+inhabit [ 9,58], and strive to behave in ways that exhibit emergent
+behaviors grounded in social interactions with users or other agents
+with the aim of becoming believable proxies of our behavior in hy-
+pothetical simulations of individuals and communities [ 19,35,70].
+Historically, these agents were developed in the context of intelli-
+gent game NPCs [ 58,84]. Creating NPCs with believable behavior,
+if possible, could enhance player experiences in games and inter-
+active fictions by enabling emergent narratives [ 7,15,48,92] and
+social interactions with the agents [ 110]. However, more impor-
+tantly, game worlds provide increasingly realistic representations
+of real-world affordances, and as observed by Laird and van Lent in
+2001, these simulated worlds offer accessible testbeds for develop-
+ers of believable agents to finesse the agents’ cognitive capabilities
+without worrying about implementing robotics in the real world
+or creating simulation environments from scratch [58, 84].
+A diverse set of approaches to creating believable agents emerged
+over the past four decades. In implementation, however, these ap-
+proaches often simplified the environment or dimensions of agent
+behavior to make the effort more manageable [ 16,72]. Rule-based
+approaches, such as finite-state machines [ 90,96] and behavior
+
+arXiv, April, 2023, J.S. Park, J.C. O’Brien, C.J. Cai, M. Morris, P. Liang, M.S. Bernstein
+trees [ 40,53,81], account for the brute force approach of human-
+authoring the agent’s behavior [ 70]. They provide a straightforward
+way of creating simple agents that is still the most dominant ap-
+proach today [ 68,73,109], and can even handle rudimentary social
+interactions, as shown in simulation games such as Mass Effect [ 12]
+and The Sims [ 6] series. Nonetheless, manually crafting behavior
+that can comprehensively address the breadth of possible interac-
+tions in an open world is untenable. This means that the resulting
+agent behaviors may not fully represent the consequences of their
+interactions [ 69–71], and cannot perform new procedures that were
+not hard-coded in their script [ 90,96]. On the other hand, preva-
+lent learning-based approaches for creating believable agents, such
+as reinforcement learning, have overcome the challenge of man-
+ual authoring by letting the agents learn their behavior, and have
+achieved superhuman performance in recent years in games such
+as AlphaStar for Starcraft [ 98] and OpenAI Five for Dota 2 [ 10].
+However, their success has largely taken place in adversarial games
+with readily definable rewards that a learning algorithm can op-
+timize for. They have not yet addressed the challenge of creating
+believable agents in an open world [39, 73, 90].
+Cognitive architectures in computation, pioneered by Newell,
+aimed to build the infrastructure for supporting a comprehensive
+set of cognitive functions [ 75] that suited the all-encompassing
+nature of believable agents held in its original vision. They fueled
+some of the earliest examples of believable agents. For instance,
+Quakebot-SOAR [ 59] and ICARUS [ 24,63] generated NPCs in first-
+person shooter games, while TacAir-SOAR [ 80] generated pilots in
+aerial combat training simulations. The architectures used by these
+agents differed (Quakebot- and TacAir-SOAR relied on SOAR [ 60],
+while ICARUS relied on its own variation that was inspired by
+SOAR and ACT-R [ 5]), but they shared the same underlying prin-
+ciple [ 61]. They maintained short-term and long-term memories,
+filled these memories with symbolic structures, and operated in
+perceive-plan-act cycles, dynamically perceiving the environment
+and matching it with one of the manually crafted action proce-
+dures [ 57,96]. Agents created using cognitive architectures aimed
+to be generalizable to most, if not all, open-world contexts and
+exhibited robust behavior for their time. However, their space of
+action was limited to manually crafted procedural knowledge, and
+they did not offer a mechanism through which the agents could be
+inspired to seek new behavior. As such, these agents were deployed
+mostly in non-open-world contexts such as first-person shooter
+games [24, 59] or blocks worlds [63].
+Today, creating believable agents as described in its original
+definition remains an open problem [ 84,108]. Many have moved on,
+arguing that although existing approaches for creating believable
+agents might be cumbersome and limited, they are good enough
+to support existing gameplay and interactions [ 23,74,108]. Our
+argument is that large language models offer an opportunity to
+re-examine these questions, provided that we can craft an effective
+architecture to synthesize memories into believable behavior. We
+offer a step toward such an architecture in this paper.2.3 Large Language Models and Human
+Behavior
+Generative agents leverage a large language model to power their
+behavior. The key observation is that large language models en-
+code a wide range of human behavior represented in their training
+data [ 14,17]. If prompted with a narrowly defined context, the
+models can be used to generate believable behavior. Recent work
+has demonstrated the efficacy of this approach. For instance, Social
+Simulacra used a large language model to generate users that would
+populate new social computing systems to prototype their emergent
+social dynamics [ 79]. This approach used a prompt chain [ 105,106]
+to generate short natural language descriptions of personas and
+their behaviors as they appear in the system being prototyped.
+Other empirical studies have replicated existing social science stud-
+ies [45], political surveys [ 91], and generated synthetic data [ 38].
+Large language models have also been used to generate interactive
+human behavior for users to engage with. In gaming, for instance,
+these models have been employed to create interactive fiction [ 36]
+and text adventure games [ 20]. With their ability to generate and
+decompose action sequences, large language models have also been
+used in planning robotics tasks [ 47]. For example, when presented
+with a task, such as picking up a bottle, the model is prompted to
+break down the task into smaller action sequences, such as heading
+to the table where the bottle is located and picking it up.
+We posit that, based on the work summarized above, large lan-
+guage models can become a key ingredient for creating believable
+agents. The existing literature largely relies on what could be con-
+sidered first-order templates that employ few-shot prompts [ 37,65]
+or chain-of-thought prompts [ 99]. These templates are effective in
+generating behavior that is conditioned solely on the agent’s cur-
+rent environment (e.g., how would a troll respond to a given post,
+what actions would a robot need to take to enter a room given that
+there is a door). However, believable agents require conditioning
+not only on their current environment but also on a vast amount
+of past experience, which is a poor fit (and as of today, impossi-
+ble due to the underlying models’ limited context window) using
+first-order prompting. Recent studies have attempted to go beyond
+first-order prompting by augmenting language models with a static
+knowledge base and an information retrieval scheme [ 52] or with
+a simple summarization scheme [ 104]. This paper extends these
+ideas to craft an agent architecture that handles retrieval where
+past experience is dynamically updated at each time step and mixed
+with agents’ current context and plans, which may either reinforce
+or contradict each other.
+3 GENERATIVE AGENT BEHAVIOR AND
+INTERACTION
+To make concrete the affordances of generative agents, we instanti-
+ate them as characters in a simple sandbox world reminiscent of
+The Sims [ 6]. This sprite-based sandbox game world, Smallville,
+evokes a small town environment. In this section, we walk through
+the affordances and interactions with generative agents in Small-
+ville, and describe how the agents behave in it. Then, in Section 4,
+we introduce our generative agent architecture that powers these
+affordances and interactions. In Section 5, we describe the sandbox
+
+Generative Agents arXiv, April, 2023,
+Figure 2: The Smallville sandbox world, with areas labeled. The root node describes the entire world, children describe areas
+(e.g., houses, cafe, stores), and leaf nodes describe objects (e.g., table, bookshelf). Agent remember a subgraph reflecting the
+parts of the world they have seen, in the state that they saw them.
+environment implementation and how the agents interact with the
+sandbox world’s underlying engine.
+3.1 Agent Avatar and Communication
+A community of 25 unique agents inhabit Smallville. Each agent is
+represented by a simple sprite avatar. We authored one paragraph
+of natural language description to depict each agent’s identity,
+including their occupation and relationship with other agents, as
+seed memories. For example, John Lin has the following description:
+John Lin is a pharmacy shopkeeper at the Willow
+Market and Pharmacy who loves to help people. He
+is always looking for ways to make the process
+of getting medication easier for his customers;
+John Lin is living with his wife, Mei Lin, who
+is a college professor, and son, Eddy Lin, who is
+a student studying music theory; John Lin loves
+his family very much; John Lin has known the old
+couple next-door, Sam Moore and Jennifer Moore,
+for a few years; John Lin thinks Sam Moore is a
+kind and nice man; John Lin knows his neighbor,
+Yuriko Yamamoto, well; John Lin knows of his
+neighbors, Tamara Taylor and Carmen Ortiz, but
+has not met them before; John Lin and Tom Moreno
+are colleagues at The Willows Market and Pharmacy;
+John Lin and Tom Moreno are friends and like to
+discuss local politics together; John Lin knows
+the Moreno family somewhat well — the husband Tom
+Moreno and the wife Jane Moreno.
+Each semicolon-delimited phrase is entered into the agent’s initial
+memory as memories at the start of the simulation.3.1.1 Inter-Agent Communication. The agents interact with the
+world by their actions, and with each other through natural lan-
+guage. At each time step of the sandbox engine, the agents output a
+natural language statement describing their current action, such as
+"Isabella Rodriguez is writing in her journal", "Isabella Rodriguez is
+checking her emails", "Isabella Rodriguez is talking with her family
+on the phone", or "Isabella Rodriguez is getting ready for bed". This
+statement is then translated into concrete movements that affect the
+sandbox world. The action is displayed on the sandbox interface as
+a set of emojis that provide an abstract representation of the action
+in the overhead view. To accomplish this, the system employs a
+language model that translates the action into a set of emojis, which
+appear above each avatar in a speech bubble. For example, "Isabella
+Rodriguez is writing in her journal" is displayed as
+ , while
+"Isabella Rodriguez is checking her emails" appears as
+ . The
+full natural language description of the action can be accessed by
+clicking on the agent avatar.
+Agents communicate with each other in full natural language.
+Agents are aware of other agents in their local area, and the genera-
+tive agent architecture determines whether they walk by or engage
+in conversation. Here, a sample in the middle of a conversation
+between the agents Isabella Rodriguez and Tom Moreno about the
+upcoming election:2
+Isabella : I’m still weighing my options, but I’ve been
+discussing the election with Sam Moore. What are your
+thoughts on him?
+Tom: To be honest, I don’t like Sam Moore. I think he’s
+out of touch with the community and doesn’t have our
+best interests at heart.
+2We note that the conversational style of these agents can fe el overly formal, likely a
+result of instruction tuning in the underlying models. We expect that writing style
+will be better controllable in future language models.
+
+arXiv, April, 2023, J.S. Park, J.C. O’Brien, C.J. Cai, M. Morris, P. Liang, M.S. Bernstein
+3.1.2 User Controls. A user running this simulation can steer the
+simulation and intervene, either by communicating with the agent
+through conversation, or by issuing a directive to an agent in the
+form of an ‘inner voice’.
+The user communicates with the agent through natural language,
+by specifying a persona that the agent should perceive them as. For
+example, if the user specifies that they are a news “reporter” and
+asks about the upcoming election, “Who is running for office?”, the
+John agent replies:
+John : My friends Yuriko, Tom and I have been talking
+about the upcoming election and discussing the candi-
+date Sam Moore. We have all agreed to vote for him
+because we like his platform.
+To directly command one of the agents, the user takes on the per-
+sona of the agent’s “inner voice”—this makes the agent more likely
+to treat the statement as a directive. For instance, when told “You
+are going to run against Sam in the upcoming election” by a user
+as John’s inner voice, John decides to run in the election and shares
+his candidacy with his wife and son.
+3.2 Environmental Interaction
+Smallville features the common affordances of a small village in-
+cluding a cafe, bar, park, school, dorm, houses, and stores. It also
+defines subareas and objects that make those spaces functional,
+such as a kitchen in a house and a stove in the kitchen (Figure 2).
+All spaces serving as agents’ primary living quarters feature a bed,
+desk, closet, shelf, as well as a bathroom and a kitchen.3
+Agents move around Smallville as one would in a simple video
+game, entering and leaving buildings, navigating its map, and ap-
+proaching other agents. Agent movements are directed by the gen-
+erative agent architecture and the sandbox game engine: when the
+model dictates that the agent will move to a location, we calculate
+a walking path to the destination in the Smallville environment
+and the agent begins moving. In addition, users can also enter the
+sandbox world of Smallville as an agent operating within it. The
+agent that the user embodies can be an agent already present in
+the world, such as Isabella and John, or it can be an outside visitor
+with no prior history in Smallville. The inhabitants of Smallville
+will treat the user-controlled agent no differently than they treat
+each other. They recognize its presence, initiate interactions, and
+remember its behavior before forming opinions about it.
+Users and agents can influence the state of the objects in this
+world, much like in sandbox games such as The Sims. For example,
+a bed can be occupied when an agent is sleeping, and a refrigerator
+can be empty when an agent uses up the ingredients to make
+breakfast. End users can also reshape an agent’s environment in
+Smallville by rewriting the status of objects surrounding the agent
+in natural language. For instance, when Isabella is making breakfast
+in the morning, the user can change the status of the kitchen stove
+from “turned on” to “burning” by inputting a command to the
+system that chooses the object and illustrates its new status, like
+this: “<Isabella’s apartment: kitchen: stove> is burning.” Isabella
+will notice this in the next moment and go to turn off the stove
+3This environment design is not the focus of our work, so we generate this environment
+manually, not automatically. Future work can continue to expand the richness of the
+agents’ environments.and remake her breakfast. Likewise, if the user sets the status of
+Isabella’s shower to “leaking water” when she enters the bathroom,
+she gathers tools from her living room and try to fix the leak.
+3.3 Example “Day in the Life”
+Starting from the single-paragraph description, agents begin plan
+their days. As time passes in the sandbox world, their behaviors
+evolve as these agents interact with each other and the world, build
+memories and relationships, and coordinate joint activities.
+We demonstrate the behavior of generative agents by tracing the
+output of our system over the course of one day for the agent John
+Lin (Figure 3). In the Lin family, John is the first to wake up at 7 a.m.
+He brushes his teeth, takes a shower, gets dressed, eats breakfast,
+and checks the news at the dining table in the living room. At 8
+a.m., Eddy follows suit, rushing out of bed to prepare for his classes.
+He catches up with John just as he is about to head out:
+John : Good morning Eddy. Did you sleep well?
+Eddy : Good morning dad. Y eah, I slept great.
+John : That’s good. What are you working on today?
+Eddy : I’m working on a new music composition for my
+class. It’s due this week, so I’m trying to get it finished.
+But I’m having so much fun with it!
+John : That sounds great!
+Soon after Eddy heads out, Mei wakes up and joins John. Mei asks
+about her son, and John recalls the conversation that they just had:
+Mei: Did Eddy already leave for school?
+John : Y es, he just left. He’s working on a music com-
+position for his class.
+Mei: Oh, that’s wonderful! Tell me about it.
+John : I think he’s really enjoying it! He said he’s having
+a lot of fun with it.
+Mei: That’s great! I’m so proud of him.
+As they finish their conversation, Mei and John pack up. Mei goes
+on to teach and work on her research paper, while John opens his
+pharmacy counter at the Willow Market and Pharmacy by 9 a.m.
+3.4 Emergent Social Behaviors
+By interacting with each other, generative agents in Smallville
+exchange information, form new relationships, and coordinate joint
+activities. Extending prior work [ 79], these social behaviors are
+emergent rather than pre-programmed.
+3.4.1 Information Diffusion. As agents notice each other, they may
+engage in dialogue—as they do so, information can spread from
+agent to agent. For instance, in a conversation between Sam and
+Tom at the grocery store, Sam tells Tom about his candidacy in the
+local election:
+Sam : Hey Tom, how’s it going?
+Tom: Good, thanks. What’s up?
+Sam : Well, I wanted to talk to you about something. I’m
+actually running for mayor in the upcoming local elec-
+tion.
+Tom: Really? That’s great news! Why are you running?
+Sam : I’ve been involved in local politics for years now,

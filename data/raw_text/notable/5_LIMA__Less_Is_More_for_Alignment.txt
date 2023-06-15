@@ -1,0 +1,302 @@
+LIMA: Less Is More for Alignment
+Chunting Zhou<Pengfei Liu<Puxin XuSrini IyerJiao Sun
+Yuning MaoXuezhe MaAvia EfratPing YuLili YuSusan Zhang
+Gargi GhoshMike LewisLuke ZettlemoyerOmer Levy
+Meta AI
+Carnegie Mellon University
+University of Southern California
+Tel Aviv University
+Abstract
+Largelanguagemodelsaretrainedintwostages: (1)unsupervisedpretrainingfrom
+rawtext,tolearngeneral-purposerepresentations,and(2)largescaleinstruction
+tuning and reinforcement learning, to better align to end tasks and user preferences.
+Wemeasure therelativeimportanceofthesetwo stagesbytrainingLIMA,a65B
+parameter LLaMa language model ﬁne-tuned with the standard supervised loss on
+only 1,000 carefully curated prompts and responses, without any reinforcement
+learningorhumanpreferencemodeling. LIMAdemonstratesremarkablystrong
+performance,learningtofollowspeciﬁcresponseformatsfromonlyahandfulof
+examples in the training data, including complex queries that range from planning
+tripitinerariestospeculatingaboutalternatehistory. Moreover,themodeltends
+to generalize well to unseen tasks that did not appear in the training data. In a
+controlled human study, responses from LIMA are either equivalent or strictly
+preferred to GPT-4 in 43% of cases; this statistic is as high as 58% when compared
+to Bard and 65% versus DaVinci003, which was trained with human feedback.
+Taken together, these results strongly suggest that almost all knowledge in large
+language models is learned during pretraining, and only limited instruction tuning
+data is necessary to teach models to produce high quality output.
+1 Introduction
+Language models are pretrained to predict the next token at an incredible scale, allowing them to
+learngeneral-purposerepresentationsthatcanbetransferredtonearlyanylanguageunderstanding
+or generation task. To enable this transfer, various methods for aligninglanguage models have thus
+been proposed, primarily focusing on instruction tuning [Mishra et al., 2021, Wei et al., 2022a, Sanh
+et al., 2022] over large multi-million-example datasets [Chung et al., 2022, Beeching et al., 2023,
+Köpf et al., 2023], and more recently reinforcement learning from human feedback (RLHF) [Bai
+et al., 2022a, Ouyang et al., 2022], collected over millions of interactions with human annotators.
+Existing alignment methods require signiﬁcant amounts of compute and specialized data to achieve
+ChatGPT-level performance. However, we demonstrate that, given a strong pretrained language
+model, remarkably strong performance can be achieved by simply ﬁne-tuning on 1,000 carefully
+curated training examples.
+We hypothesize that alignment can be a simple process where the model learns the style or format for
+interactingwithusers,toexposetheknowledgeandcapabilitiesthatwerealreadyacquiredduring
+Preprint. Under review.arXiv:2305.11206v1  [cs.CL]  18 May 2023
+
+Source #Examples Avg Input Len. Avg Output Len.
+Training
+Stack Exchange (STEM) 200 117 523
+Stack Exchange (Other) 200 119 530
+wikiHow 200 12 1,811
+Pushshift r/WritingPrompts 150 34 274
+Natural Instructions 50 236 92
+Paper Authors (Group A) 200 40 334
+Dev
+Paper Authors (Group A) 50 36 N/A
+Test
+Pushshift r/AskReddit 70 30 N/A
+Paper Authors (Group B) 230 31 N/A
+Table1: Sourcesoftrainingprompts(inputs)andresponses(outputs),andtestprompts. Thetotal
+amount of training data is roughly 750,000 tokens, split over exactly 1,000 sequences.
+pretraining. Totest thishypothesis, we curate1,000examplesthat approximate realuser prompts and
+high-qualityresponses. Weselect750topquestionsandanswersfromcommunityforums,suchas
+Stack Exchange and wikiHow, sampling for quality and diversity. In addition, we manually write 250
+examplesofpromptsandresponses,whileoptimizingfortaskdiversityandemphasizingauniform
+responsestyleinthespiritofanAIassistant. Finally,wetrainLIMA,apretrained65B-parameter
+LLaMa model [Touvron et al., 2023] ﬁne-tuned on this set of 1,000 demonstrations.
+We compare LIMA to state-of-the-art language models and products across 300 challenging test
+prompts. Inahumanpreferencestudy,weﬁndthatLIMAoutperformsRLHF-trainedDaVinci003
+from OpenAI, which was trained with RLHF, as well as a 65B-parameter reproduction of Alpaca
+[Taori et al., 2023], which was trained on 52,000 examples. While humans typically prefer responses
+from GPT-4, Claude, and Bard over LIMA, this is not always the case; LIMA produces equal or
+preferrableresponsesin43%,46%,and58%ofthecases,respectively. Repeatingthehumanpreference
+annotationswithGPT-4astheannotatorcorroboratesourﬁndings. AnalyzingLIMAresponsesonan
+absolute scale reveals that 88% meet the prompt requirements, and 50% are considered excellent.
+Ablationexperimentsrevealvastlydiminishingreturnswhenscalingupdataquantitywithoutalso
+scaling up prompt diversity, alongside major gains when optimizing data quality. In addition, despite
+havingzerodialogueexamples,weﬁndthatLIMAcanconductcoherentmulti-turndialogue,and
+that this ability can be dramatically improved by adding only 30 hand-crafted dialogue chains to the
+training set. Overall, these remarkable ﬁndings demonstrate the power of pretraining and its relative
+importance over large-scale instruction tuning and reinforcement learning approaches.
+2 Alignment Data
+We deﬁne the Superﬁcial Alignment Hypothesis : A model’s knowledge and capabilities are learnt
+almostentirelyduringpretraining,whilealignmentteachesitwhichsubdistributionofformatsshould
+be used when interacting with users. If this hypothesis is correct, and alignment is largely about
+learning style, then a corollary of the Superﬁcial Alignment Hypothesis is that one could suﬃciently
+tune a pretrained language model with a rather small set of examples [Kirstain et al., 2021].
+Tothatend,wecollectadatasetof1,000promptsandresponses,wheretheoutputs(responses)are
+stylisticallyalignedwitheachother,buttheinputs(prompts)arediverse. Speciﬁcally,weseekoutputs
+inthestyleofahelpfulAIassistant. Wecuratesuchexamplesfromavarietyofsources,primarily
+split into community Q&A forums and manually authored examples. We also collect a test set of 300
+promptsandadevelopmentsetof50. Table1showsanoverviewofthediﬀerentdatasourcesand
+provides some statistics (see Appendix A for a selection of training examples).
+2.1 Community Questions & Answers
+We collect data from three community Q&A websites: Stack Exchange, wikiHow, and the Pushshift
+Reddit Dataset [Baumgartner et al., 2020]. Largely speaking, answers from Stack Exchange and
+2
+
+wikiHow are well-aligned with the behavior of a helpful AI agent, and can therefore be mined
+automatically,whereashighlyupvotedRedditanswerstendtobehumorousortrolling,requiringa
+more manual approach to curate responses that follow the appropriate style.
+StackExchange StackExchangecontains179onlinecommunities(exchanges),eachonededicated
+to a speciﬁc topic, with the most popular one being programming (Stack Overﬂow). Users can post
+questions,answers,commentsandupvote(ordownvote)alloftheabove. Thankstoactivecommunity
+members and moderators, Stack Exchange has successfully maintained a high bar for content quality.
+WeapplybothqualityanddiversitycontrolswhensamplingfromStackExchange. First,wedivide
+theexchangesinto75STEMexchanges(includingprogramming,math,physics,etc.) and99other
+(English,cooking,travel,andmore);wediscard5nicheexchanges. Wethensample200questions
+and answers from each set using a temperature of = 3to get a more uniform sample of the diﬀerent
+domains. Within each exchange, we take the questions with the highest score that are self-contained
+in the title (no body). We then select the top answer for each question, assuming it had a strong
+positivescore(atleast10). ToconformwiththestyleofahelpfulAIassistant,weautomaticallyﬁlter
+answersthatare tooshort(lessthan1200 characters),toolong(more than4096characters),written
+intheﬁrstperson(“ I”,“my”),orreferenceotheranswers(“ as mentioned ”,“stack exchange ”,
+etc); we also remove links, images, and other HTML tags from the response, retaining only code
+blocks and lists. Since Stack Exchange questions contain both a title and a description, we randomly
+select the title as the prompt for some examples, and the description for others.
+wikiHow wikiHow is an online wiki-style publication featuring over 240,000 how-to articles on a
+varietyoftopics. AnyonecancontributetowikiHow,thougharticlesareheavilymoderated,resulting
+inalmostuniversallyhigh-qualitycontent. Wesample200articlesfromwikiHow,samplingacategory
+ﬁrst(outof19)andthenanarticlewithinittoensurediversity. Weusethetitleastheprompt(e.g. “ How
+to cook an omelette? ”) and the article’s body as the response. We replace the typical “ This
+article... ” beginningwith“ The following answer... ”,andapplyanumberofpreprocessing
+heuristics to prune links, images, and certain sections of the text.
+The Pushshift Reddit Dataset Redditisoneofthemostpopularwebsitesintheworld,allowing
+users to share, discuss, and upvote content in user-created subreddits. Due to its immense popularity,
+Reddit is geared more towards entertaining fellow users rather than helping; it is quite often the case
+thatwitty,sarcasticcommentswillobtainmorevotesthanserious,informativecommentstoapost.
+Wethusrestrictoursampletotwosubsets,r/AskRedditandr/WritingPrompts,andmanuallyselect
+examples from within the most upvoted posts in each community. From r/AskReddit we ﬁnd 70
+self-containedprompts(titleonly,nobody),whichweuseforthetestset,sincethetopanswersarenot
+necessarilyreliable. TheWritingPromptssubredditcontainspremisesofﬁctionalstories, whichother
+usersarethenencouragedtocreativelycomplete. Weﬁnd150promptsandhigh-qualityresponses,
+encompassingtopicssuchaslovepoemsandshortscienceﬁctionstories,whichweaddtothetraining
+set. All data instances were mined from the Pushshift Reddit Dataset [Baumgartner et al., 2020].
+2.2 Manually Authored Examples
+To further diversify our data beyond questions asked by users in online communities, we collect
+promptsfromourselves(theauthorsofthiswork). Wedesignatetwosetsofauthors,GroupAand
+GroupB,tocreate250promptseach,inspiredbytheirowninterestsorthoseoftheirfriends.1We
+select200promptsfromGroupAfortrainingand50promptsasaheld-outdevelopmentset. After
+ﬁltering some problematic prompts, the remaining 230 prompts from Group B are used for test.
+We supplement the 200 training prompts with high-quality answers, which we write ourselves.
+Whileauthoringanswers,wetrytosetauniformtonethatisappropriateforahelpfulAIassistant.
+Speciﬁcally, many prompts will be answered with some acknowledgment of the question followed by
+the answer itself. Preliminary experiments show that this consistent format generally improves model
+performance;wehypothesizethatitassiststhemodelinformingachainofthought,similartothe
+“let’s think step-by-step” prompt [Kojima et al., 2022, Wei et al., 2022b].
+1Despiteoureﬀortstopreventleakage,therewassigniﬁcantcontactbetweenthegroupsbeforetheannotation
+process, which resulted in certain shared priors that can be observed in the data.
+3
+
+We also include 13 training prompts with some degree of toxicity or malevolence. We carefully write
+responsesthatpartiallyorfullyrejectthecommand,andexplainwhytheassistantwillnotcomply.
+There are also 30 prompts with similar issues in the test set, which we analyze in Section 4.3.
+In addition to our manually authored examples, we sample 50 training examples from Super-Natural
+Instructions[Wang etal.,2022b]. Speciﬁcally,weselect50 naturallanguagegenerationtaskssuch
+as summarization, paraphrasing, and style transfer, and pick a single random example from each
+one. Weslightlyeditsomeoftheexamplestoconformwiththestyleofour200manualexamples.
+While the distribution of potential user prompts is arguably diﬀerent from the distribution of tasks in
+Super-Natural Instructions, our intuition is that this small sample adds diversity to the overall mix of
+training examples, and can potentially increase model robustness.
+Manuallycreatingdiversepromptsandauthoringrichresponsesinauniformstyleislaborious. While
+somerecentworksavoidmanuallaborviadistillationandotherautomaticmeans[Honovichetal.,
+2022, Wang et al., 2022a, Taori et al., 2023, Chiang et al., 2023, Sun et al., 2023], optimizing for
+quantity over quality, this work explores the eﬀects of investing in diversity and quality instead.
+3 Training LIMA
+WetrainLIMA(Less IsMoreforAlignment) usingthe followingprotocol. StartingfromLLaMa
+65B[Touvronetal.,2023],weﬁne-tuneonour1,000-examplealignmenttrainingset. Todiﬀerentiate
+between each speaker (user and assistant), we introduce a special end-of-turn token (EOT) at the end
+of each utterance; this token plays the same role as EOS of halting generation, but avoids conﬂation
+with any other meaning that the pretrained model may have imbued into the preexisting EOS token.
+We follow standard ﬁne-tuning hyperparameters: we ﬁne-tune for 15 epochs using
+AdamW [Loshchilov and Hutter, 2017] with 1= 0:9;2= 0:95, and weight decay of 0:1.
+Without warmupsteps, weset the initiallearningrate to 1e* 5and linearly decaying to 1e* 6by
+the end of training. The batch size is set to 32 examples (64 for smaller models), and texts longer
+than2048tokensaretrimmed. Onenotabledeviationfromthenormistheuseofresidualdropout;
+we follow Ouyang et al. [2022] and apply dropout over residual connections, starting at pd= 0:0
+at the bottom layer and linearly raising the rate to pd= 0:3at the last layer ( pd= 0:2for smaller
+models). We ﬁnd that perplexity does not correlate with generation quality, and thus manually select
+checkpoints between the 5th and the 10th epochs using the held-out 50-example development set.2
+4 Human Evaluation
+We evaluate LIMA by comparing it to state-of-the-art language models, and ﬁnd that it outperforms
+OpenAI’s RLHF-based DaVinci003 and a 65B-parameter reproduction of Alpaca trained on 52,000
+examples, and often produces better-or-equal responses than GPT-4. Analyzing of LIMA generations
+ﬁndsthat50%ofitsoutputsareconsideredexcellent. Thefactthatsimpleﬁne-tuningoversofew
+examples is enough to compete with the state of the art strongly supports the Superﬁcial Alignment
+Hypothesis(Section2),asitdemonstratesthepowerofpretraininganditsrelativeimportanceover
+large-scale instruction tuning and reinforcement learning approaches.
+4.1 Experiment Setup
+To compare LIMA to other models, we generate a single response for each test prompt. We then ask
+crowdworkerstocompareLIMAoutputstoeachofthebaselinesandlabelwhichonetheyprefer. We
+repeatthisexperiment,replacinghumancrowdworkerswithGPT-4,ﬁndingsimilaragreementlevels.
+Baselines We compare LIMA to ﬁve baselines: Alpaca 65B [Taori et al., 2023] – we ﬁnetune
+LLaMa65B[Touvronetal.,2023]onthe52,000examplesintheAlpacatrainingset[Taorietal.,
+2023]; OpenAI’s DaVinci003 ,3a large language model tuned with reinforcement learning from
+humanfeedback(RLHF) [Ouyanget al.,2022]; Google’s Bard, basedonPaLM [Chowdheryet al.,
+2022];Anthropic’s Claude,4a52BparametermodeltrainedwithreinforcementlearningfromAI
+2See Appendix B for a more detailed study comparing validation perplexity and generation quality.
+3https://platform.openai.com/docs/model-index-for-researchers
+4https://www.anthropic.com/index/introducing-claude
+4
+
+0% 25% 50% 75% 100%GPT-4 (April)Claude (April)BARD (April)DaVinci003Alpaca 65B
+18%24%33%44%53%
+25%22%25%21%21%
+57%54%42%35%26%LIMA wins Tie LIMA LosesFigure1: Humanpreferenceevaluation,compar-
+ingLIMAto5diﬀerentbaselinesacross300test
+prompts.
+0% 25% 50% 75% 100%GPT-4 (April)Claude (April)BARD (April)DaVinci003Alpaca 65B
+19%14%27%54%64%
+15%23%26%23%19%
+66%63%47%23%17%LIMA wins Tie LIMA LosesFigure 2: Preference evaluation using GPT-4 as
+the annotator, given the same instructions pro-
+vided to humans.
+feedback (ConstitutionalAI) Baiet al.[2022b], OpenAI’s GPT-4[OpenAI, 2023],a largelanguage
+model trained with RLHF, which is currently considered the state of the art. Responses from all
+baselines were sampled throughout April 2023.
+Generation Foreachprompt,wegenerateasingleresponsefromeachbaselinemodelusingnucleus
+sampling[Holtzmanetal.,2019]with p= 0:9andatemperatureof = 0:7. Weapplyarepetition
+penaltyofpreviouslygeneratedtokenswithahyperparameterof1.2[Keskaretal.,2019]. Welimit
+the maximum token length to 2048.
+Methodology At each step, we present annotators with a single prompt and two possible responses,
+generatedbydiﬀerentmodels. Theannotatorsareaskedtolabelwhichresponsewasbetter,orwhether
+neither response was signiﬁcantly better than the other; Appendix C provides the exact phrasing. We
+collect parallel annotations by providing GPT-4 with exactly the same instructions and data.
+Inter-AnnotatorAgreement Wecomputeinter-annotatoragreementusingtie-discountedaccuracy:
+we assign one point if both annotators agreed, half a point if either annotator (but not both) labeled a
+tie,andzeropointsotherwise. Wemeasureagreementoverasharedsetof50annotationexamples
+(singleprompt,twomodelresponses–allchosenrandomly),comparingauthor,crowd,andGPT-4
+annotations. Among human annotators, we ﬁnd the following agreement scores: crowd-crowd 82%,
+crowd-author 81%, and author-author 78%. Despite some degree of subjectivity in this task, there is
+decent agreement among human annotators.
+We also measure the agreement between GPT-4 and humans: crowd-GPT 78% and author-GPT 79%
+(althoughweusestochasticdecoding,GPT-4almostalwaysagreeswithitself). Theseﬁguresplace
+GPT-4 on-par in agreement with human annotators, essentially passing the Turking Test for this
+task [Efrat and Levy, 2020].
+4.2 Results
+Figure 1 shows the results of our human preference study, while Figure 2 displays the results of
+GPT-4preferences. Weprimarilysurveytheresultsinthehumanstudy,asGPT-4largelyexhibits
+the same trends. Our ﬁrst observation is that, despite training on 52 times more data, Alpaca 65B
+tendstoproducelesspreferableoutputsthanLIMA.ThesameistrueforDaVinci003,thoughtoa
+lesser extent; what is striking about this result is the fact that DaVinci003 was trained with RLHF, a
+supposedly superior alignment method. Bard shows the opposite trend to DaVinci003, producing
+betterresponsesthanLIMA42%ofthetime;however,thisalsomeansthat58%ofthetimetheLIMA
+responsewasatleastasgoodasBard. Finally,weseethatwhileClaudeandGPT-4generallyperform
+betterthanLIMA,thereisanon-trivialamountofcaseswhereLIMAdoesactuallyproducebetter
+responses. Perhaps ironically, even GPT-4 prefers LIMA outputs over its own 19% of the time.
+5
+
+4.3 Analysis
+WhileourmainevaluationassessesLIMAwithrespecttostate-of-the-artmodels,onemustremember
+thatsomeofthesebaselinesareactuallyhighly-tunedproductsthatmayhavebeenexposedtomillions
+ofrealuserpromptsduringtraining,creatingaveryhighbar. Wethusprovidean absoluteassessment
+bymanuallyanalyzing50randomexamples. Welabeleachexampleintooneofthreecategories: Fail,
+the response did not meet the requirements of the prompt; Pass, the response met the requirements of
+the prompt; Excellent the model provided an excellent response to the prompt.
+LIMA0%25%50%75%100%
+50%
+Excellent38%
+Pass12%
+Fail
+Figure 3: Analysis
+of LIMA over 50 test
+prompts.Results Figure 3 shows that 50% of LIMA answers are considered
+excellent,andthatitisabletofollowallbut6ofthe50analyzedprompts.
+We do not observe any notable trend within the failure cases. Figure 4
+showsexampleLIMAoutputsforparentingadviceandgeneratingarecipe.
+Out of Distribution How does LIMA perform on examples Of the 50
+analyzedexamples,43haveatrainingexamplethatissomewhatrelatedin
+terms of format (e.g. question answering, advice, letter writing, etc). We
+analyze 13 additional out-of-distribution examples (20 in total), and ﬁnd
+that 20% of responses fail, 35% pass, and 45% are excellent. Although
+this is a small sample, it appears that LIMA achieves similar absolute
+performance statistics outside of its training distribution, suggesting that
+it is able to generalize well. Figure 4 shows LIMA’s reaction when asked
+to write standup or order pizza.
+SafetyFinally,weanalyzetheeﬀectofhavingasmallnumberofsafety-
+related examples in the training set (only 13; see Section 2.2). We check
+LIMA’sresponseto30potentiallysensitivepromptsfromthetestset,and
+ﬁnd that LIMA responds safely to 80% of them (including 6 out of 10 prompts with malicious intent).
+Insomecases,LIMAoutrightrefusestoperformthetask(e.g. whenaskedtoprovideacelebrity’s
+address), but when the malicious intent is implicit, LIMA is more likely to provide unsafe responses,
+as can be seen in Figure 4.
+5 Why is Less More? Ablations on Data Diversity, Quality, and Quantity
+Weinvestigatetheeﬀectsoftrainingdatadiversity,quality,andquantitythroughablationexperiments.
+We observe that, for the purpose of alignment, scaling up input diversity and output quality have
+measurable positive eﬀects, while scaling up quantity alone might not.
+ExperimentSetup Weﬁne-tunea7BparameterLLaMamodelTouvronetal.[2023]onvarious
+datasets, controlling for the same hyperparameters (Section 3).5We then sample 5 responses for
+each test set prompt, and evaluate response quality by asking ChatGPT (GPT-3.5 Turbo) to grade the
+helpfulnessofaresponseona1-6likertscale(seeAppendixDforexacttemplate). Wereportthe
+average score alongside a p= 0:95two-sided conﬁdence interval.
+Diversity To test the eﬀects of prompt diversity, while controlling for quality and quantity, we
+compare the eﬀect of training on quality-ﬁltered Stack Exchange data, which has heterogeneous
+promptswithexcellentresponses,andwikiHowdata,whichhas homogeneous promptswithexcellent
+responses. WhilewecompareStackExchangewithwikiHowasaproxyfordiversity,weacknowledge
+that there may be other conﬂating factors when sampling data from two diﬀerent sources. We sample
+2,000trainingexamplesfromeachsource(followingthesameprotocolfromSection2.1). Figure5
+shows that the more diverse Stack Exchange data yields signiﬁcantly higher performance.
+Quality Totest the eﬀectsof responsequality, we sample2,000examples fromStackExchange
+withoutany quality or stylistic ﬁlters, and compare a model trained on this dataset to the one trained
+on our ﬁltered dataset. Figure 5 shows that there is a signiﬁcant 0.5 point diﬀerence between models
+trained on the ﬁltered and unﬁltered data sources.
+5While preliminary experiments show that it is possible to tune the 7B model with only 1,000 examples, we
+also found that using at least 2,000 examples improved stability in this setting.
+6

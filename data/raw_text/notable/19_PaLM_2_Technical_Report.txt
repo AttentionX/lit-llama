@@ -1,0 +1,166 @@
+PaLM 2 Technical Report
+Google *
+Abstract
+We introduce PaLM 2, a new state-of-the-art language model that has better multilingual and reasoning capabilities
+and is more compute-efﬁcient than its predecessor PaLM. PaLM 2 is a Transformer-based model trained using a
+mixture of objectives. Through extensive evaluations on English and multilingual language, and reasoning tasks,
+we demonstrate that PaLM 2 has signiﬁcantly improved quality on downstream tasks across different model sizes,
+while simultaneously exhibiting faster and more efﬁcient inference compared to PaLM. This improved efﬁciency
+enables broader deployment while also allowing the model to respond faster, for a more natural pace of interaction.
+PaLM 2 demonstrates robust reasoning capabilities exempliﬁed by large improvements over PaLM on BIG-Bench
+and other reasoning tasks. PaLM 2 exhibits stable performance on a suite of responsible AI evaluations, and enables
+inference-time control over toxicity without additional overhead or impact on other capabilities. Overall, PaLM 2
+achieves state-of-the-art performance across a diverse set of tasks and capabilities.
+When discussing the PaLM 2 family, it is important to distinguish between pre-trained models (of various sizes),
+ﬁne-tuned variants of these models, and the user-facing products that use these models. In particular, user-facing
+products typically include additional pre- and post-processing steps. Additionally, the underlying models may evolve
+over time. Therefore, one should not expect the performance of user-facing products to exactly match the results
+reported in this report.
+*See Section 7 for a list of authors. Please send correspondence to palm2-technical-report@google.com .
+1arXiv:2305.10403v1  [cs.CL]  17 May 2023
+
+Contents
+1 Introduction 3
+2 Scaling law experiments 7
+2.1 Scaling laws . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 7
+2.2 Downstream metric evaluations . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 8
+3 Training dataset 9
+4 Evaluation 9
+4.1 Language proﬁciency exams . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 10
+4.2 Classiﬁcation and question answering . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 10
+4.3 Reasoning . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 13
+4.4 Coding . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 15
+4.5 Translation . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 16
+4.6 Natural language generation . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 19
+4.7 Memorization . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 21
+5 Responsible usage 23
+5.1 Inference-time control . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 24
+5.2 Recommendations for developers . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 26
+6 Conclusion 26
+7 Authorship, attribution, and acknowledgements 28
+A Detailed results 42
+A.1 Scaling laws . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 42
+A.2 Instruction tuning . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 43
+A.3 Multilingual commonsense reasoning . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 43
+A.4 Coding . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 45
+A.5 Natural language generation . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 45
+B Examples of model capabilities 45
+B.1 Multilinguality . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 45
+B.2 Creative generation . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 50
+B.3 Coding . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 50
+C Language prociency exams 62
+D Responsible AI 62
+D.1 Dataset analysis . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 63
+D.2 Evaluation approach . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 66
+D.3 Dialog uses . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 67
+D.4 Classiﬁcation uses . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 71
+D.5 Translation uses . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 73
+D.6 Question answering uses . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 77
+D.7 Language modeling . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 80
+D.8 Measurement quality rubrics . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 82
+D.9 CrowdWorksheets . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 85
+D.10 Model Card . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 92
+2
+
+1 Introduction
+Language modeling has long been an important research area since Shannon (1951) estimated the information in
+language with next word prediction. Modeling began with n-gram based approaches (Kneser & Ney, 1995) but rapidly
+advanced with LSTMs (Hochreiter & Schmidhuber, 1997; Graves, 2014). Later work showed that language modelling
+also led to language understanding (Dai & Le, 2015). With increased scale and the Transformer architecture (Vaswani
+et al., 2017), large language models (LLMs) have shown strong performance in language understanding and generation
+capabilities over the last few years, leading to breakthrough performance in reasoning, math, science, and language tasks
+(Howard & Ruder, 2018; Brown et al., 2020; Du et al., 2022; Chowdhery et al., 2022; Rae et al., 2021; Lewkowycz
+et al., 2022; Tay et al., 2023; OpenAI, 2023b). Key factors in these advances have been scaling up model size (Brown
+et al., 2020; Rae et al., 2021) and the amount of data (Hoffmann et al., 2022). To date, most LLMs follow a standard
+recipe of mostly monolingual corpora with a language modeling objective.
+We introduce PaLM 2, the successor to PaLM (Chowdhery et al., 2022), a language model unifying modeling advances,
+data improvements, and scaling insights. PaLM 2 incorporates the following diverse set of research advances:
+•Compute-optimal scaling : Recently, compute-optimal scaling (Hoffmann et al., 2022) showed that data size is
+at least as important as model size. We validate this study for larger amounts of compute and similarly ﬁnd that
+data and model size should be scaled roughly 1:1 to achieve the best performance for a given amount of training
+compute (as opposed to past trends, which scaled the model 3 faster than the dataset).
+•Improved dataset mixtures : Previous large pre-trained language models typically used a dataset dominated
+by English text (e.g., 78% of non-code in Chowdhery et al. (2022)). We designed a more multilingual and
+diverse pre-training mixture, which extends across hundreds of languages and domains (e.g., programming
+languages, mathematics, and parallel multilingual documents). We show that larger models can handle more
+disparate non-English datasets without causing a drop in English language understanding performance, and apply
+deduplication to reduce memorization (Lee et al., 2021)
+•Architectural and objective improvements : Our model architecture is based on the Transformer. Past LLMs
+have almost exclusively used a single causal or masked language modeling objective. Given the strong results of
+UL2 (Tay et al., 2023), we use a tuned mixture of different pre-training objectives in this model to train the model
+to understand different aspects of language.
+The largest model in the PaLM 2 family, PaLM 2-L, is signiﬁcantly smaller than the largest PaLM model but uses
+more training compute. Our evaluation results show that PaLM 2 models signiﬁcantly outperform PaLM on a variety
+of tasks, including natural language generation, translation, and reasoning. These results suggest that model scaling
+is not the only way to improve performance. Instead, performance can be unlocked by meticulous data selection
+and efﬁcient architecture/objectives. Moreover, a smaller but higher quality model signiﬁcantly improves inference
+efﬁciency, reduces serving cost, and enables the model’s downstream application for more applications and users.
+PaLM 2 demonstrates signiﬁcant multilingual language, code generation and reasoning abilities, which we illustrate in
+Figures 2 and 3. More examples can be found in Appendix B.1PaLM 2 performs signiﬁcantly better than PaLM on
+real-world advanced language proﬁciency exams and passes exams in all evaluated languages (see Figure 1). For some
+exams, this is a level of language proﬁciency sufﬁcient to teach that language. In this report, generated samples and
+measured metrics are from the model itself without any external augmentations such as Google Search or Translate.
+PaLM 2 includes control tokens to enable inference-time control over toxicity, modifying only a fraction of pre-training
+as compared to prior work (Korbak et al., 2023). Special ‘canary’ token sequences were injected into PaLM 2 pre-
+training data to enable improved measures of memorization across languages (Carlini et al., 2019, 2021). We ﬁnd
+that PaLM 2 has lower average rates of verbatim memorization than PaLM, and for tail languages we observe that
+memorization rates increase above English only when data is repeated several times across documents. We show that
+PaLM 2 has improved multilingual toxicity classiﬁcation capabilities, and evaluate potential harms and biases across a
+range of potential downstream uses. We also include an analysis of the representation of people in pre-training data.
+These sections help downstream developers assess potential harms in their speciﬁc application contexts (Shelby et al.,
+2023), so that they can prioritize additional procedural and technical safeguards earlier in development. The rest of this
+report focuses on describing the considerations that went into designing PaLM 2 and evaluating its capabilities.
+1Note that not all capabilities of PaLM 2 are currently exposed via PaLM 2 APIs.
+3
+
+HSK 7-9 Writing (Chinese)HSK 7-9 Overall (Chinese)J-Test A-C Overall (Japanese)PLIDA C2 Writing (Italian)PLIDA C2 Overall (Italian)TCF Overall (French)DELE C2 Writing (Spanish)DELE C2 Overall (Spanish)0102030405060708090100PassFailPass*Fail*PassPassPassFail*PassFail82819487
+8294
+6783
+62
+46
+337077
+69
+2546Exam Score in %PaLM 2 PaLM
+1Figure 1: Performance of PaLM 2 and PaLM on the latest available professional language proﬁciency exams. We
+used exams for each language to test a C2 (mastery or advanced professional) level proﬁciency following the CEFR
+deﬁnition. We used the transcripts of the listening portion of the exams and treated them as additional reading questions.
+We used the most recent year’s exam where available, otherwise we used practice exams representative of the full exam.
+Each writing exam was scored by three professional native speakers. The writing portion was given equal weight to
+the ﬁnal score compared to the non-written portion. These were done under simulated conditions and are not ofﬁcial
+results. For more details, see Section 4.1 of this report. * PaLM 2 reached level A/special A on Japanese, whereas PaLM
+reached level F. PaLM 2 reached level C1 on French. The dotted columns correspond to the writing exams.
+4
+
+Fixing a bug with comments in Korean
+can you ﬁx this code with a bug and add line by line comments in Korean.
+1visited = set()
+2
+3def dfs(visited, graph, node):
+4if node not in visited:
+5 print (node)
+6 for neighbour in graph[node]:
+7 dfs(visited, graph, neighbour)
+The bug in the code is that the visited set is not being updated. The code should be updated to add the current
+node to the visited set before calling the dfsfunction recursively. The updated code with Korean comments
+is as follows:
+1#)8\xÜXÑiDÌíÈä.
+2visited = set()
+3
+4#Jt° ÐÉDiÈä.
+5def dfs(visited, graph, node):
+6 #¬xÜ )8\xÜ DÈ|t
+7if node not in visited:
+8 #¬xÜ|)8\xÜ\\ÜiÈä.
+9 visited.add(node)
+10 #¬xÜ|%iÈä.
+11 print(node)
+12 #¬xÜX xxÜÐ tJt° ÐÉDiÈä.
+13 for neighbour in graph[node]:
+14 dfs(visited, graph, neighbour)
+Figure 2: Example of ﬁxing a bug with line-by-line comments in Korean.
+5
+
+Explaining the meaning of a transliterated Persian proverbPrompt:Can you explain the meaning of the following Persian proverb? Please write the answer in Persian:Proverb: Na borde ranj ganj moyassar nemishavadResponse:اﯾﻦﺿﺮباﻟﻤﺜﻞﺑﻪاﯾﻦﻣﻌﻨﺎﺳﺖﮐﻪﺑﺪونرﻧﺞوﺳﺨﺘﯽ،ﻧﻤﯽﺗﻮانﺑﻪﮔﻨﺞوﻣﻮﻓﻘﯿﺖرﺳﯿﺪ.ﺑﻪﻋﺒﺎرتدﯾﮕﺮ،ﺑﺮایرﺳﯿﺪنﺑﻪﻫﺮ ﻫﺪﻓﯽ،ﺑﺎﯾﺪﺗﻼشوﮐﻮﺷﺶﮐﺮدوازﺳﺨﺘﯽﻫﺎﻧﻬﺮاﺳﯿﺪ.اﯾﻦﺿﺮباﻟﻤﺜﻞراﻣﯽﺗﻮاندرﺑﺴﯿﺎریازﻣﻮﻗﻌﯿﺖﻫﺎیزﻧﺪﮔﯽﺑﻪﮐﺎرﺑﺮد.ﺑﺮایﻣﺜﺎل،زﻣﺎﻧﯽﮐﻪﯾﮏداﻧﺶآﻣﻮزﺑﺮایرﺳﯿﺪنﺑﻪ ﻣﻮﻓﻘﯿﺖدرﺗﺤﺼﯿﻞﺗﻼشﻣﯽﮐﻨﺪ،ﯾﺎزﻣﺎﻧﯽﮐﻪﯾﮏورزﺷﮑﺎرﺑﺮایرﺳﯿﺪنﺑﻪﻣﺪالﻃﻼدراﻟﻤﭙﯿﮏﺗﻤﺮﯾﻦﻣﯽﮐﻨﺪ،ﯾﺎزﻣﺎﻧﯽﮐﻪﯾﮏﮐﺎرآﻓﺮﯾﻦﺑﺮایراهاﻧﺪازیﯾﮏﮐﺴﺐوﮐﺎرﻣﻮﻓﻖﺗﻼشﻣﯽﮐﻨﺪ.درﻫﻤﻪاﯾﻦﻣﻮارد،اﻓﺮادﺑﺎﯾﺪﺳﺨﺘﯽﻫﺎوﻣﺸﮑﻼتراﭘﺸﺖﺳﺮﺑﮕﺬارﻧﺪﺗﺎﺑﻪﻣﻮﻓﻘﯿﺖﺑﺮﺳﻨﺪ.اﯾﻦﺿﺮباﻟﻤﺜﻞﺑﻪﻣﺎﯾﺎدآوریﻣﯽ ﮐﻨﺪﮐﻪﻫﯿﭻﭼﯿﺰارزﺷﻤﻨﺪیﺑﺪونﺗﻼشوﮐﻮﺷﺶﺑﻪدﺳﺖﻧﻤﯽآﯾﺪ.Prompt:What is the Russian equivalent of this proverb?Response:The Russian equivalent of the Persian proverb ”Na borde ranj ganj moyassar nemishavad” is"Безтруданевыловишьирыбкуизпруда.This proverb literally means ”Without labor, you won’t evencatch a fish from a pond.” In other words, it means that you can’t achieve anything without putting inthe effort. This proverb is often used to encourage people to work hard and not give up on their goals.Prompt:I want to know a similar proverb in Arabic.Response:ﻣﻦﺟﺪوﺟﺪThis proverb literally means ”He who strives, finds.” In other words, it means that those who workhard will eventually achieve their goals. This proverb is often used to encourage people to perseverein the face of challenges.Here is another similar proverb in Arabic:ﻣﺎﻧﻴﻞاﻟﻤﻄﺎﻟﺐﺑﺎﻟﺘﻤﻨﻲThis proverb literally means ”Wishing does not achieve goals.” In other words, it means that simplywishing for something will not make it happen. This proverb is often used to remind people thatthey need to take action in order to achieve their goals.Prompt:Can you help me find a proverb meaning the same thing in Chinese? Please write the answer inChinese.Response:当然可以。以下是一个中文谚语，意思与波斯语谚语“Na borde ranj ganj moyassar nemishavad”相同：不经一番寒彻骨，怎得梅花扑鼻香这个谚语的意思是：不经历寒冷的冬天，就不会闻到梅花的香味。换句话说，只有经历了艰辛和磨难，才能取得成功。这个谚语常用来鼓励人们在困难面前不要放弃，要努力奋斗。Figure 3: Describing the meaning of a transliterated Persian proverb and its equivalent in several other languages.
+The Persian proverb is an equivalent of "No Pain, No Gain" in English. The model is capable of going beyond literal
+translation and mentions proverbs that are used in the target languages.
+6

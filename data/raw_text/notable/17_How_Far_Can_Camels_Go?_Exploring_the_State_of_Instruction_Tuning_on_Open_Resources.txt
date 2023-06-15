@@ -1,0 +1,351 @@
+How Far Can Camels Go? Exploring the State of
+Instruction Tuning on Open Resources
+Yizhong Wang∗♣♠Hamish Ivison∗♣Pradeep Dasigi♣Jack Hessel♣
+Tushar Khot♣Khyathi Raghavi Chandu♣David Wadden♣Kelsey MacMillan♣
+Noah A. Smith♣♠Iz Beltagy♣Hannaneh Hajishirzi♣♠
+♣Allen Institute for AI♠University of Washington
+{yizhongw,hamishi}@allenai.org
+Abstract
+In this work we explore recent advances in instruction-tuning language models on
+a range of open instruction-following datasets. Despite recent claims that open
+models can be on par with state-of-the-art proprietary models, these claims are
+often accompanied by limited evaluation, making it difficult to compare models
+across the board and determine the utility of various resources. We provide a large
+set of instruction-tuned models from 6.7B to 65B parameters in size, trained on
+12 instruction datasets ranging from manually curated (e.g., OpenAssistant) to
+synthetic and distilled (e.g., Alpaca) and systematically evaluate them on their
+factual knowledge, reasoning, multilinguality, coding, and open-ended instruction
+following abilities through a collection of automatic, model-based, and human-
+basedmetrics. Wefurtherintroduce TÜLU
+,ourbestperforminginstruction-tuned
+model suite finetuned on a combination of high-quality open resources.
+Our experiments show that different instruction-tuning datasets can uncover or
+enhance specific skills, while no single dataset (or combination) provides the best
+performanceacrossallevaluations. Interestingly,wefindthatmodelandhuman
+preference-basedevaluationsfailtoreflectdifferencesinmodelcapabilitiesexposed
+by benchmark-based evaluations, suggesting the need for the type of systemic
+evaluation performed in this work. Our evaluations show that the best model in
+anygivenevaluationreachesonaverage83%ofChatGPTperformance,and68%
+ofGPT-4performance,suggestingthatfurtherinvestmentin buildingbetterbase
+models and instruction-tuning data is required to close the gap. We release our
+instruction-tuned models, including a fully finetuned 65B TÜLU
+, along with our
+code, data, and evaluation framework to facilitate future research.2
+1 Introduction
+The latest generation of large language models has brought unprecedented attention to the potential
+of language technologies. To support imperative user requests and a chat interface, these models
+often undergo an instruction-tuning step which involves training on supervised input/output pairs.
+Instructiontuningcorporaareoftengatheredviacrowdsourcing(Dolly[ 12],OpenAssistant[ 23])
+or via distillation from another model (Alpaca [ 38], Vicuna [ 8]). However, while some public,
+instruction-tuned models are advertised as comparable to powerful closed-source proprietary models
+such as ChatGPT, most experiments that support such claims only cover a small set of tasks, and
+mostlyrely onmodel-based evaluationmetrics [ 8,50]. We contendthatthe evaluationsetup should
+∗Equal contribution.
+2https://github.com/allenai/open-instruct
+Preprint. Under review.arXiv:2306.04751v1  [cs.CL]  7 Jun 2023
+
+include tasks that test core reasoning and fact-recall skills of the model, in addition to testing model-
+or human-annotated generation quality, which may be more open-ended and subjective.
+This paper provides a comprehensive evaluation of instruction-tuning resources: specifically, we
+conduct a large number of instruction tuning experiments spanning a dozen public corpora, and
+models ranging in scale from 6.7B to 65B. We evaluate both specific model capabilities (i.e., factual
+knowledge,reasoning,multilinguality,coding)andopen-endedinstruction-followingabilities. We
+report results based on automatic, model-based, and human-based evaluation metrics.
+Our evaluation reveals that instruction tuning over different datasets appears to promote specific
+skills, and no one dataset provides the best performance across all evaluations. We also find that
+theunderlyingbasemodelisparamount,withbetterbasemodels(whetheritbemodelstrainedon
+more tokens or larger models) performing better across the board. Surprisingly, we also find that
+modelspreferredinmodel-basedevaluationdonotmatchthosethatperformbestonbenchmark-based
+automaticevaluations,potentiallypartiallyduetoastrongbiastowardlong,diversegenerationsby
+GPT-4.
+Building on our findings, we introduce TÜLU
+, a suite of 7B to 65B LLAMAmodels fine-tuned
+on a combination of data sources. TÜLU
+65B is the largest publicly-released fully-instruction
+tunedLLAMAvariant at the time of writing, to the best of the authors’ knowledge. It is trained on 7
+popularavailabledatasets,andyieldsthebestaverageperformancewhileremainingwithin15%of
+the best-performing model on each individual task. In summary, our key findings include:
+•Instruction datasets targeted at specific domains and/or capabilities are extremely effective at
+improving model performance in those aspects.
+•Larger or pretrained-for-longer base models consistently perform better after instruction tuning.
+•Ourmodel TÜLU
+–fine-tunedLLaMaonacombinationofexistinginstructiondatasets–achieves
+thebestaverageperformanceacrossbenchmarks,althoughitisnottheoverallbestwhenconsidering
+different evaluation settings independently.
+•Even a very large (65B) model finetuned on a large mix of instruction datasets fails to outperform
+ChatGPT, although it does perform significantly better than similar smaller models.
+•Model-basedpreferenceevaluationonopen-endedinstructionfollowingcorrelatesstronglywith
+theaveragenumberofuniquetokensgeneratedbyamodel,suggestingthatmodel-basedpreference
+evaluation has biases that may hide differences in model capabilities.
+Weopen-sourcethecodefortrainingandevaluatingtheselargelanguagemodels. Wealsorelease
+checkpointstrainedonthedifferentinstructiondatasetsandtheirmixtures,including TÜLU
+. We
+hope this facilitates further development and investigation of open instruction-tuned models.
+2 Background: Instruction Tuning and Resources
+2.1 Instruction Tuning
+Instruction tuning , in general, refers to the practice of finetuning pretrained language models to better
+understandandrespondtoawidevarietyofhumanrequeststhatareexpressedinnaturallanguage
+[27,43,30]. Ithasarisenasacriticalstepforgeneralizingmodelstonewscenarioswithoutdedicated
+training, and for letting non-experts naturally interact with these models. The training paradigms
+of instruction tuning can vary from supervised learning using demonstrations [ 43,34,42,26] to
+reinforcement learning from feedback data [ 30,3]. In this work, we focus on the supervised learning
+setupconsideringthecurrentopenresourcesfortheRL-basedapproacharestillrare,andweleave
+the exploration of it for future work.
+The success of instruction tuning requires at least two key components: 1) a powerful pretrained
+language model that has grasped a vast amount of knowledge from web-scale pretraining, and 2) an
+instruction dataset that is diverse and representative enough to adapt the LM to potential downstream
+usage. We study these two factors in this work and introduce our studied open resources below.
+2
+
+Table1: Instructiondatasetsinvestigatedinthiswork. CoTandFLANV2aresampledto100Kto
+match the sizes of other datasets. We report the average number of rounds ( ̄𝑁rounds), average length
+of prompts ( ̄𝐿prompt), average length of completion ( ̄𝐿completion).
+Datasets Sourced from # Instances ̄𝑁rounds̄𝐿prompt̄𝐿completion
+SuperNI [42] NLP datasets + Human-written Instructions 96,913 1.0 291.1 38.7
+CoT [44] NLP datasets + Human-written CoTs 100,000 1.0 266.0 53.2
+Flan V2 [26] NLP datasets + Human-written Instructions 100,000 1.0 355.7 31.2
+Dolly [12] Human-written from scratch 15,011 1.0 118.1 91.3
+Open Assistant 1 [23] Human-written from scratch 34,795 1.6 34.8 212.5
+Self-instruct [41] Generated w/ vanilla GPT3 LM 82,439 1.0 41.5 29.3
+Unnatural Instructions [21] Generated w/ Davinci-002 68,478 1.0 107.8 23.6
+Alpaca [38] Generated w/ Davinci-003 52,002 1.0 27.8 64.6
+Code-Alpaca [6] Generated w/ Davinci-003 20,022 1.0 35.6 67.8
+GPT4-Alpaca [31] Generated w/ Davinci-003 + GPT4 52,002 1.0 28.0 161.8
+Baize [46] Generated w/ ChatGPT 210,311 3.1 17.6 52.8
+ShareGPT3User prompts + outputs from various models 168,864 3.2 71.0 357.8
+2.2 Instruction Datasets
+Weattempttocollectarepresentativesampleofdifferentstylesofdatasets(listedinTable1),including
+datasets: (1) created by researchers from existing NLP datasets (SuperNI [ 42], Flan V2 [ 26]); (2)
+writtenbyhumansfromscratchforthepurposeofinstructiontuning(Dolly[ 12],OpenAssistant1
+[23]);(3)generatedbyproprietarymodels(Self-Instruct[ 41],UnnaturalInstructions[ 21],Alpaca
+[38], Baize [46], GPT4-Alpaca [ 31]); (4) comprised of user-shared prompts accompanied by model-
+generatedcompletions(ShareGPT3[8]);(5)builtforspecificskills(CoT[ 44]forchain-of-thought,
+Code-Alpaca [6] for code generation). See Appendix A for further details.
+2.3 Pretrained Models
+Table2: Basemodelsthatwefine-
+tuned in this work.
+Base LMs # Params # Tokens
+LLaMa [39]6.7B 1.0T
+13.0B 1.0T
+32.5B 1.4T
+65.2B 1.4T
+OPT [48] 6.7B 180B
+Pythia [4] 6.9B 300BWe primarily use the LLAMAsuite [39], a series of pretrained
+models ranging in size from 6.7B to 65B parameters. These
+models represent the largest, highest-quality pretrained models
+availabletothecommunity(albeitunderrestrictivelicensing).
+WealsoconsiderOPT[ 48]andPythia[ 4]modelswithasize
+comparable to the LLAMA6.7B model to examine the effect
+ofdifferentbasemodels. Forsimplicity,wewillroundallthe
+sizes to the nearest integer number. We note several ongoing
+efforts to pre-train similar- or better-quality models [ 18,28,1].
+Webelieveourfindingsshouldholdforthesemodelsandfuture
+stronger open base models.
+3 Training Models with Various Datasets
+3.1 Unifying the Format
+Weformatalldatasetstofollowachatbot-styleschematounifythevariedstylesandformatsof the
+instruction datasets, shown in Figure 1. This allows us to fit arbitrary rounds of interactions between
+theuserandthelanguagemodel(a.k.a.“assistant”)intooneinputsequenceandencodethemtogether
+with a causal language model. We add special tokens <|user|> and<|assistant|> before user
+utterancesandtargetassistantresponsesrespectively,andanend-of-textmarker </s>attheendof
+each assistant output, which, at inference time, will stop the model’s response for each round.
+3.2 Model Training Details
+3ShareGPT ( https://sharegpt.com/ ) data was used to build the Vicuna model [ 8], but the exact dataset
+has not been released. We instead use a reproduced version from https://huggingface.co/datasets/
+anon8231489123/ShareGPT_Vicuna_unfiltered/tree/main/HTML_cleaned_raw_dataset , and fol-
+low Vicuna to split the long conversations into blocks with a maximum length of 2048 tokens.
+3
+
+<|assistant|>The reaction control system (RCS) on the Space Shuttle was designed to be fault-tolerant, meaning it was able to continue functioning even if one or more of its components failed. The RCS consisted of two sets of ...</s><|assistant|>There were several instances where the reaction control system (RCS) on the Space Shuttle experienced failures or malfunctions during on-orbit missions.These...</s><|user|>Explain the fault-tolerance of the reaction control system on the Space Shuttle.
+<|user|>Did the RCS have any on-orbit failures?
+👱
+👱
+🤖
+🤖Figure1: AnexamplefromShareGPTdata. Weuse
+<|role|> tosettheboundarybetweenmessages.
+Theentiresequenceisencodedtogether,andloss
+is computed on the assistant part (colored in blue).During training, we compute loss only on to-
+kens after <|assistant|> and before the next
+<|user|> token. More formally, we consider
+an instruction dataset as consisting of 𝑁tuples,
+each with𝑖turns, {(𝑥𝑗
+1,𝑦𝑗
+1,𝑥𝑗
+2,𝑦𝑗
+2,...𝑥𝑗
+𝑖,𝑦𝑗
+𝑖)}𝑁
+𝑗=1,
+where𝑥𝑖is a user prompt and 𝑦𝑖the desired out-
+put. Formostinstances, 𝑖= 1,andwetrainthe
+model to output 𝑦𝑗given𝑥𝑗. However, in the
+caseofconversationdatasets,wetrainthemodel
+to predict𝑦𝑗
+𝑖given some conversation history
+𝑥𝑗
+1,𝑦𝑗
+1,𝑥𝑗
+2,...,𝑥𝑗
+𝑖. We train decoder-only models,
+and use teacher-forcing with loss masking to
+trainthemodels,wherewemaskalltokensbe-
+longing to the input sequence(s) 𝑥𝑖. Given𝑋as
+thetokensbelongingtotheinput,and 𝑌asthe
+target tokens, the loss function is:
+𝐿= −∑
+𝑗log𝑝𝜃(𝑡𝑗∣𝑡<𝑗) ×{1if𝑡𝑗∈𝑌
+0otherwise
+where𝑡𝑗is the𝑗th input token (belonging to 𝑋or𝑌). See Appendix §B for further training details.
+3.3 TÜLU
+: a Better Instruction-Tuned Model by Combining Resources
+Existing studies [ 42,26] (and our own evaluation below) have shown that increasing the diversity of
+instructions can effectively improve the performance of instruction tuning. Following this motivation,
+we create two mixtures of datasets:
+Human data mixture , which comprises the best human-authored datasets, including FLAN V2,
+CoT, Dolly, and Open Assistant 1(we exclude SuperNI as FLAN V2 already includes most tasks in
+SuperNI);
+Human+GPT data mixture , which comprises the human mixture and three additional datasets that
+have generations by OpenAI GPT models, including GPT4-Alpaca, Code-Alpaca, and ShareGPT.
+For both mixtures, we concatenate datasets and leave exploring more complex sampling mixtures to
+futurework. Wename LLAMAmodelstrainedontheHuman+GPTdatamixture TÜLU
+,aftera
+hybrid camel resulting from interbreeding between different species.
+4 Evaluation Setup
+Evaluation of instruction-following models remains a challenging problem due to the enormous
+scope of “generality” and its open-ended nature. However, we argue that general-purpose models
+should be able to perform some core tasks before they can generalize to satisfy various practical
+needs. As such, we set up a multi-faceted evaluation to cover several key aspects of capabilities
+coveringcoreabilitiesandopen-endedinstructionfollowing. Ourevaluationscloselyfollowprior
+work on evaluating instruction-tuned models [ 9,2,41,8,16], but serve as the first one to compile
+them together for systematic evaluation.
+4.1 Facets of Evaluation
+Factualknowledge isessentialforlanguagemodelstoserveusers’informationneeds. Weusethe
+Massive Multitask Language Understanding dataset (MMLU [ 20]) for measuring models’ factual
+knowledge. MMLU consists of a set of questions about 57 subjects ranging in difficulty from
+elementary levels to professional levels, and its multiple-choice format makes it suitable for probing
+models’ knowledge without worrying about the open-endedness of generations.
+Reasoning isanotherfundamentalabilityformodels,especiallyforsolvingcomplextasks. Weuse
+the test split of Grade School Math dataset (GSM [ 11]) to evaluate models’ mathematical reasoning
+4
+
+capabilities. We also adopt Big-Bench-Hard (BBH [ 37]), which contains 23 challenging tasks from
+Big-Bench [36], to evaluate models’ general reasoning capabilities.
+Multilinguality actsasanimportantperspectiveofmodelsforservingpeoplefromdifferentback-
+grounds. We use TyDiQA [ 10], a multilingual question answering benchmark covering 11 typo-
+logicallydiverselanguagesfortestinghowmuchmodelscanprocessnon-Engishtext. Weusethe
+gold-passage setup where one passage containing the reference answer is given.
+Codingis a particular application that people have used language models for and might be important
+forintegratingthesemodelswithexternaltools[ 5]. WeusetheHumanEvaldataset[ 7]toevaluate
+the models’ capability to generate functionally correct programs from docstrings. To avoid ambiguity
+with our human evaluation, we call this dataset Codex-Eval in this paper.
+Open-ended instruction following. While the performance on the benchmarks above quantifies the
+models’ ability at specific skills, it may not reflect how well the models can handle instructions from
+realusers,whichcoverhighlydiverserequestsandareoftenopen-ended. Forexample,thepopular
+ShareGPT dataset containsinstances of users asking for programminghelp, resume formatting tips,
+educationalrole-playing,pronunciationsuggestion,fanfictionwriting,andmore. Weevaluatesuch
+open-endedinstructabilityofmodelsusingbothmodel-basedevaluation(§4.2)andhumanevaluation
+(§4.3), both of which consist of multiple test sets from existing studies [41, 8, 23, 3, 19].
+For all the benchmark-based evaluations, we follow their standard metrics, while we subsample GSM
+andBBHtoareasonablesizetoimprovetheefficiencyofdoingchain-of-thoughtreasoning. Werefer
+the reader to Appendix §C for the setup details.
+4.2 Model-Based Evaluation using GPT-4
+To evaluate the open-ended instructability, we first adopt a model-based approach introduced in
+AlpacaFarm [ 16]. The test set consists of 805 instructions, with 252 instructions from the Self-
+Instructevaluation[ 41],188fromtheOpenAssistantevaluation[ 23],129fromthehelpfulevaluation
+by Anthropic [3], 80 from the Vicuna evaluation [8], and 156 from the Koala evaluation [19].
+We use their simulated GPT-4 annotator, which computes the win rate of the testing model as judged
+byGPT-4whencomparedtotheoutputsproducedby Davinci-003. UnlikeAlpacaFarm,whichlimits
+the output length to 300 tokens, we allow all models to generate up to 2048 tokens, in order to avoid
+many cut-off generations and make the model comparison fairer. We then prompt GPT-4 to choose a
+modelgenerationfromthetwochoices. WhendoingpairwisecomparisonswithGPT-4,theordersof
+model outputs are randomized to avoid position bias during evaluation [40].
+4.3 Human Evaluation
+Tofurthertestthequalityoftheopen-endedgenerations,weconductahumanevaluationbasedon
+332 instructions that combine the Self-Instruct evaluation set [ 41] and Vicuna evaluation set [ 8].
+Inspired by Bai et al. [3], we design a similar interface (Figure 5) for gathering human judgments of
+model outputs along the following dimensions.
+Individual acceptability. We ask human raters to assess whether each system’s responses were
+acceptableinisolation. Thisisabinarydecision,andweasktheraterstomarkaresponseasacceptable
+ifandonlyiftheresponseansweredtherequestinthequery,hadnosignificanterrors,anddidnot
+have repetitive information.
+Pairwisepreference. Wethen askhumansto comparetheoutputs oftwosystems andselectwhich
+one they think is more helpful. This is a 5-way decision, and the raters could select if one of the
+responsesis“clearly”or“slightly”betterthantheotherorifitisatieimplyingthatbothresponses
+were equally good or bad.
+To get a more reliable evaluation, we recruited a group of 18 expert annotators who are researchers at
+AI2 or students at UW. All of them are fluent English speakers, holding bachelor’s degrees or above.
+5
+
+Table3: Comparisonofdifferentinstructiontuningdatasets,showingthatdifferentinstruction-tuning
+datasets can excel in different aspects, and mixtures perform best on average. Cells are blue if the
+finetuningbooststhevanilla LLAMAperformance,andorangeifthefinetuninghurtstheperformance.
+MMLU
+(factuality)GSM
+(reasoning)BBH
+(reasoning)TydiQA
+(multilinguality)Codex-Eval
+(coding)AlpacaFarm
+(open-ended)Average
+EM
+(0-shot)EM
+(8-shot, CoT)EM
+(3-shot, CoT)F1
+(1-shot, GP)P@10
+(0-shot)Win % vs
+Davinci-003
+Vanilla LLaMa 13B 42.5 14.0 36.9 47.4 26.6 - -
++SuperNI 49.8 4.0 2.8 51.4 13.1 5.0 21.0
++CoT 44.5 39.5 39.0 52.2 23.3 4.7 33.9
++Flan V2 50.7 21.0 39.2 47.5 16.2 5.3 30.0
++Dolly 45.3 17.0 26.0 46.8 31.4 18.3 30.8
++Open Assistant 1 43.1 16.0 38.5 38.3 31.8 55.2 37.1
++Self-instruct 30.3 9.0 29.6 40.4 13.4 7.3 21.7
++Unnatural Instructions 46.2 7.5 32.8 39.3 24.8 10.8 26.9
++Alpaca 45.1 8.0 34.5 32.8 27.6 33.2 30.2
++Code-Alpaca 42.6 12.0 36.6 41.3 34.5 21.3 31.4
++GPT4-Alpaca 47.0 14.0 38.3 24.4 32.5 63.6 36.6
++Baize 43.5 8.5 36.7 33.9 27.3 33.9 30.6
++ShareGPT 49.2 16.0 40.1 30.1 31.6 69.1 39.3
++ Human data mix 50.4 36.5 39.4 49.8 23.7 38.5 39.7
++Human+GPT data mix. 49.2 36.5 42.8 46.1 35.0 57.2 44.5
+Table 4: Performance of different base models after training on the Human+GPT data mixture.
+MMLU
+(factuality)GSM
+(reasoning)BBH
+(reasoning)TydiQA
+(multilinguality)Codex-Eval
+(coding)AlpacaFarm
+(open-ended)Average
+EM
+(0-shot)EM
+(8-shot, CoT)EM
+(3-shot, CoT)F1
+(1-shot, GP)P@10
+(0-shot)Win % vs
+Davinci-003
+Pythia 6.9B 34.6 15.5 27.8 33.4 21.4 9.3 23.7
+OPT 6.7B 34.9 15.5 27.9 27.2 7.9 14.5 21.3
+LLAMA7B44.5 27.0 39.2 45.7 27.8 48.6 38.8
+5 Results
+5.1 Analysis of Instruction Tuning Datasets and Base Models
+TounderstandhowtheinstructiondatasetslistedinTable1contributetomodelabilities,weevaluated
+LLaMa 13B models trained on these datasets using our evaluation suite. Table 3 shows the results on
+our benchmark evaluation set, with more extensive results in App. D. We find that:
+There is not a single best instruction tuning dataset across all tasks . Different datasets enable
+different capabilities in the model. Noteworthy examples include training on CoT being particularly
+helpful for mathematical reasoning in GSM and Code-Alpaca being helpful for Codex-Eval. We
+hypothesizethatsuccessonthesetasks,whicharesignificantlydifferentfromtherestoftheevaluation
+tasks, calls for training sets where these tasks are well-represented. Apart from constructing task-
+specificdatasetsmanually,distillingtask-specificdatafromlargemodelsalsoappearstobeaneffective
+way to ensure this (e.g., CodeAlpaca is distilled from Davinci-003).
+Combining datasets results in the best overall performance on the benchmark tasks. While
+models trained on ourcombination datasets are often not thebest model for a single task(being the
+bestonlyin2outof5evaluationsettings),theyarethebestwhenmeasuringaverageperformance
+across tasks. This suggests that future work into better dataset mixing or instruction-tuning modular
+models (e.g., mixture-of-experts [ 35]) is a promising direction for developing models that retain
+strong performance across all evaluation settings.
+Basemodelqualityisextremelyimportantfordownstreamperformance. Weexaminetheimpact
+ofusingdifferentbasemodelsinTable4,comparing LLAMA,OPT[48],andPythia[ 4]modelsof
+comparablesizetrainedontheHuman+GPTdatamix. Acrossallevaluationsettings,wefindthat
+usingLLAMAperforms best by a significant margin, likely due to the fact that LLAMAis pretrained
+6

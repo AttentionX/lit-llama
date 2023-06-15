@@ -1,0 +1,566 @@
+A Survey on In-context Learning
+Qingxiu Dong1, Lei Li1, Damai Dai1, Ce Zheng1, Zhiyong Wu2,
+Baobao Chang1, Xu Sun1, Jingjing Xu2, Lei Li3and Zhifang Sui1
+1MOE Key Lab of Computational Linguistics, School of Computer Science, Peking University
+2Shanghai AI Lab3University of California, Santa Barbara
+{dqx,lilei}@stu.pku.edu.cn, wuzhiyong@pjlab.org.cn, lilei@cs.ucsb.edu
+{daidamai,zce1112zslx,chbb,xusun,jingjingxu,szf}@pku.edu.cn
+Abstract
+With the increasing ability of large language
+models (LLMs), in-context learning (ICL)
+has become a new paradigm for natural
+language processing (NLP), where LLMs
+make predictions only based on contexts aug-
+mented with a few examples. It has been a
+new trend to explore ICL to evaluate and ex-
+trapolate the ability of LLMs. In this paper,
+we aim to survey and summarize the progress
+and challenges of ICL. We first present a for-
+mal definition of ICL and clarify its corre-
+lation to related studies. Then, we organize
+and discuss advanced techniques, including
+training strategies, demonstration designing
+strategies, as well as related analysis. Finally,
+we discuss the challenges of ICL and provide
+potential directions for further research. We
+hope that our work can encourage more re-
+search on uncovering how ICL works and
+improving ICL.
+1 Introduction
+With the scaling of model size and corpus size (De-
+vlin et al., 2019; Radford et al., 2019; Brown et al.,
+2020; Chowdhery et al., 2022), large language
+models (LLMs) demonstrate an in-context learn-
+ing (ICL) ability, that is, learning from a few ex-
+amples in the context. Many studies have shown
+that LLMs can perform a series of complex tasks
+through ICL, such as solving mathematical reason-
+ing problems (Wei et al., 2022c). These strong abil-
+ities have been widely verified as emerging abilities
+for large language models (Wei et al., 2022b).
+The key idea of in-context learning is to learn
+from analogy. Figure 1 gives an example describ-
+ing how language models make decisions with ICL.
+First, ICL requires a few examples to form a demon-
+stration context. These examples are usually writ-
+ten in natural language templates. Then, ICL con-
+catenates a query question and a piece of demon-
+stration context together to form a prompt, which
+Review: Delicious food! Review: The food is awful. … Review: Terrible dishes!
+PositiveLarge Language ModelReview: Good meal!Sentiment:
+InputSentiment: PositiveSentiment: Negative…Sentiment: NegativeOutputParameter Freeze kDemonstrationExamplesNewQuery 
+TemplateDelicious food!  The food is awful. Terrible dishes!…Review: [Text] Sentiment: [Label]TextLabel100…
+Figure 1: Illustration of in-context learning. ICL re-
+quires a piece of demonstration context containing a few
+examples written in natural language templates. Taking
+the demonstration and a query as the input, large lan-
+guage models are responsible for making predictions.
+is then fed into the language model for prediction.
+Different from supervised learning requiring a train-
+ing stage that uses backward gradients to update
+model parameters, ICL does not conduct parameter
+updates and directly performs predictions on the
+pretrained language models. The model is expected
+to learn the pattern hidden in the demonstration and
+accordingly make the right prediction.
+As a new paradigm, ICL has multiple attractive
+advantages. First, since the demonstration is writ-
+ten in natural language, it provides an interpretable
+interface to communicate with LLMs (Brown et al.,
+2020). This paradigm makes it much easier to in-
+corporate human knowledge into LLMs by chang-
+ing the demonstration and templates (Liu et al.,
+2022; Lu et al., 2022; Wu et al., 2022; Wei et al.,
+2022c). Second, in-context learning is similar to
+the decision process of human beings by learning
+from analogy (Winston, 1980). Third, compared
+with supervised training, ICL is a training-free
+learning framework. This could not only greatly re-
+duce the computation costs for adapting the model
+to new tasks, but also make language-model-as-a-
+service (Sun et al., 2022) possible and can be easily
+applied to large-scale real-world tasks.
+Despite being promising, there are also inter-
+esting questions and intriguing properties that re-arXiv:2301.00234v3  [cs.CL]  1 Jun 2023
+
+In-context LearningTraining Warmup (§4)Supervised
+In-context
+Training (§4.1)MetaICL (Min et al., 2022b), OPT-IML (Iyer et al., 2022), FLAN (Wei et al., 2022a),
+Super-NaturalInstructions (Wang et al., 2022c), Scaling Instruction (Chung et al., 2022),
+Symbol Tuning (Wei et al., 2023a)
+Self-supervised
+In-context
+Training (§4.2)Self-supervised ICL (Chen et al., 2022a), PICL (Gu et al., 2023)
+InferenceDemonstration
+Designing (§5)Organization (§5.1)Selecting
+(§5.1.1)KATE (Liu et al., 2022), EPR (Rubin et al., 2022), PPL (Gonen et al., 2022),
+SG-ICL (Kim et al., 2022a), Self Adaptive (Wu et al., 2022),MI (Sorensen et al., 2022),
+Q-Learning (Zhang et al., 2022a), Informative Score (Li and Qiu, 2023a),
+Topic (Wang et al., 2023e), UDR (Li et al., 2023f)
+Ordering
+(§5.1.2)GlobalE&LocalE (Lu et al., 2022)
+Formatting (§5.2)Instruction
+(§5.2.1)Instruction Induction (Honovich et al., 2022), APE (Zhou et al., 2022c),
+Self-Instruct (Wang et al., 2022b)
+Reasoning
+Steps
+(§5.2.2)CoT (Wang et al., 2022b), Complex CoT (Fu et al., 2022),
+AutoCoT (Zhang et al., 2022b), Self-Ask (Press et al., 2022),
+MoT(Li and Qiu, 2023b), SuperICL(Xu et al., 2023b)
+iCAP (Wang et al., 2022a), Least-to-Most Prompting (Zhou et al., 2022a)
+Scoring
+Function (§6)Channel prompt tuning (Min et al., 2022a), Structrured Prompting (Hao et al., 2022b),
+kNN-Prompting (Xu et al., 2023a)
+Figure 2: Taxonomy of in-context learning. The training and the inference stage are two main stages for ICL.
+During the training stage, existing ICL studies mainly take a pretrained LLM as backbone, and optionally warmup
+the model to strengthen and generalize the ICL ability. Towards the inference stage, the demonstration designing
+and the scoring function selecting are crucial for the ultimate performance.
+quire further investigation in ICL. While the vanilla
+GPT-3 model itself shows promising ICL abilities,
+several studies observed that the ability could be
+significantly boosted via adaption during pretrain-
+ing (Min et al., 2022b; Chen et al., 2022c). In
+addition, the performance of ICL is sensitive to spe-
+cific settings, including the prompting template, the
+selection of in-context examples, and order of ex-
+amples, and so on (Zhao et al., 2021). Furthermore,
+while intuitively reasonable, the working mecha-
+nism of the ICL remains unclear, and few studies
+have provided preliminary explanations (Dai et al.,
+2022; von Oswald et al., 2022).
+With the rapid growth of studies in ICL, our
+survey aims to sensitize the community toward the
+current progress. Specifically, we present a detailed
+paper survey with a paper list that will be continu-
+ously updated, and make an in-depth discussion on
+related studies of ICL. We highlight the challenges
+and potential directions and hope our work may
+provide a useful roadmap for beginners interested
+in this area and shed light on future research.
+2 Overview
+The strong performance of ICL relies on two stages:
+(1) the training stage that cultivates the ICL ability
+of LLMs, and (2) the inference stage where LLMs
+predict according to task-specific demonstrations.
+In terms of the training stage, LLMs are directly
+trained on language modeling objectives, such as
+left-to-right generation. Although the models arenot specifically optimized for in-context learning,
+they still exhibit the ICL ability. Existing studies on
+ICL basically take a well-trained LLM as the back-
+bone, and thus this survey will not cover the details
+of pretraining language models. Towards the infer-
+ence stage, as the input and output labels are all
+represented in interpretable natural language tem-
+plates, there are multiple directions for improving
+ICL performance. This paper will give a detailed
+description and comparison, such as selecting suit-
+able examples for demonstrations and designing
+specific scoring methods for different tasks.
+We organize the current progress in ICL follow-
+ing the taxonomy above (as shown in Figure 2).
+With a formal definition of ICL (§3), we provide a
+detailed discussion of the warmup approaches (§4),
+the demonstration designing strategies (§5), and the
+main scoring functions(§6). §7 provides in-depth
+discussions of current explorations on unveiling the
+secrets behind the ICL. We further provide useful
+evaluation and resources for ICL (§8) and introduce
+potential application scenarios where ICL shows
+its effectiveness (§10). Finally, we summarize the
+challenges and potential directions (§11) and hope
+this could pave the way for researchers in this field.
+3 Definition and Formulation
+Following the paper of GPT-3 (Brown et al., 2020),
+we provide a definition of in-context learning: In-
+context learning is a paradigm that allows language
+models to learn tasks given only a few examples
+
+in the form of demonstration. Essentially, it esti-
+mates the likelihood of the potential answer condi-
+tioned on the demonstration by using a well-trained
+language model.
+Formally, given a query input text xand a
+set of candidate answers Y={y1, . . . , y m}
+(Y could be class labels or a set of free text
+phrases), a pretrained language model Mtakes
+the candidate answer with the maximum score
+as the prediction conditioning a demonstration
+setC.Ccontains an optional task instruc-
+tionIandkdemonstration examples; there-
+fore, C={I, s(x1, y1), . . . , s (xk, yk)}orC=
+{s(x1, y1), . . . , s (xk, yk)}, where s(xk, yk, I)is
+an example written in natural language texts ac-
+cording to the task. The likelihood of a candidate
+answer yjcould be represented by a scoring func-
+tionfof the whole input sequence with the model
+M:
+P(yj|x)≜fM(yj, C, x ) (1)
+The final predicted label ˆyis the candidate answer
+with the highest probability:
+ˆy= arg max
+yj∈YP(yj|x). (2)
+The scoring function festimates how possible the
+current answer is given the demonstration and the
+query text. For example, we could predict the class
+label in a binary sentiment classification by compar-
+ing the token probability of Negative andPositive .
+There are many fvariants for different applications,
+which will be elaborated in §6.
+According to the definition, we can see the dif-
+ference between ICL and other related concepts.
+(1) Prompt Learning: Prompts can be discrete tem-
+plates or soft parameters that encourage the model
+to predict the desired output. Strictly speaking,
+ICL can be regarded as a subclass of prompt tuning
+where the demonstration is part of the prompt. Liu
+et al. (2021) made a thorough survey on prompt
+learning. However, ICL is not included. (2) Few-
+shot Learning: few-shot learning is a general ma-
+chine learning approach that uses parameter adap-
+tation to learn the best model parameters for the
+task with a limited number of supervised exam-
+ples (Wang and Yao, 2019). In contrast, ICL does
+not require parameter updates and is directly per-
+formed on pretrained LLMs.
+4 Model Warmup
+Although LLMs have shown promising ICL ca-
+pability, many studies also show that the ICL ca-pability can be further improved through a con-
+tinual training stage between pretraining and ICL
+inference, which we call model warmup for short.
+Warmup is an optional procedure for ICL, which
+adjusts LLMs before ICL inference, including mod-
+ifying the parameters of the LLMs or adding ad-
+ditional parameters. Unlike finetuning, warmup
+does not aim to train the LLM for specific tasks but
+enhances the overall ICL capability of the model.
+4.1 Supervised In-context Training
+To enhance ICL capability, researchers proposed
+a series of supervised in-context finetuning strate-
+gies by constructing in-context training data and
+multitask training. Since the pretraining objectives
+are not optimized for in-context learning (Chen
+et al., 2022a), Min et al. (2022b) proposed a method
+MetaICL to eliminate the gap between pretraining
+and downstream ICL usage. The pretrained LLM
+is continually trained on a broad range of tasks
+with demonstration examples, which boosts its few-
+shot abilities. To further encourage the model to
+learn input-label mappings from the context, Wei
+et al. (2023a) propose symbol tuning. This ap-
+proach fine-tunes language models on in-context
+input-label pairs, substituting natural language la-
+bels (e.g., "positive/negative sentiment") with arbi-
+trary symbols (e.g., "foo/bar"). As a result, symbol
+tuning demonstrates an enhanced capacity to utilize
+in-context information for overriding prior seman-
+tic knowledge.
+Besides, recent work indicates the potential
+value of instructions (Mishra et al., 2021) and there
+is a research direction focusing on supervised in-
+struction tuning. Instruction tuning enhances the
+ICL ability of LLMs through training on task in-
+structions. Tuning the 137B LaMDA-PT (Thop-
+pilan et al., 2022) on over 60 NLP datasets ver-
+balized via natural language instruction templates,
+FLAN (Wei et al., 2022a) improves both the zero-
+shot and the few-shot ICL performance. Compared
+to MetaICL, which constructs several demonstra-
+tion examples for each task, instruction tuning
+mainly considers an explanation of the task and
+is more easier to scale up. Chung et al. (2022) and
+Wang et al. (2022c) proposed to scale up instruction
+tuning with more than 1000+ task instructions.
+4.2 Self-supervised In-context Training
+Leveraging raw corpora for warmup, Chen et al.
+(2022a) proposed constructing self-supervised
+training data aligned with ICL formats in down-
+
+stream tasks. They transformed raw text into input-
+output pairs, exploring four self-supervised objec-
+tives, including masked token prediction and classi-
+fication tasks. Alternatively, PICL (Gu et al., 2023)
+also utilizes raw corpora but employs a simple lan-
+guage modeling objective, promoting task infer-
+ence and execution based on context while preserv-
+ing pre-trained models’ task generalization. Con-
+sequently, PICL outperforms Chen et al. (2022a)’s
+method in effectiveness and task generalizability.
+3Takeaway :(1) Supervised training and self-
+supervised training both propose to train the LLMs
+before ICL inference. The key idea is to bridge the
+gap between pretraining and downstream ICL for-
+mats by introducing objectives close to in-context
+learning. Compared to in-context finetuning involv-
+ing demonstration, instruction finetuning without a
+few examples as demonstration is simpler and more
+popular. (2) To some extent, these methods all im-
+prove the ICL capability by updating the model pa-
+rameters, which implies that the ICL capability of
+the original LLMs has great potential for improve-
+ment. Therefore, although ICL does not strictly
+require model warmup, we recommend adding a
+warmup stage before ICL inference. (3) The perfor-
+mance advancement made by warmup encounters
+a plateau when increasingly scaling up the training
+data. This phenomenon appears both in supervised
+in-context training and self-supervised in-context
+training, indicating that LLMs only need a small
+amount of data to adapt to learn from the context
+during warmup.
+5 Demonstration Designing
+Many studies have shown that the performance
+of ICL strongly relies on the demonstration sur-
+face, including demonstration format, the order of
+demonstration examples, and so on (Zhao et al.,
+2021; Lu et al., 2022). As demonstrations play a vi-
+tal role in ICL, in this section, we survey demonstra-
+tion designing strategies and classify them into two
+groups: demonstration organization and demonstra-
+tion formatting, as shown in Table 1.
+5.1 Demonstration Organization
+Given a pool of training examples, demonstration
+organization focuses on how to select a subset of
+examples and the order of the selected examples.
+5.1.1 Demonstration Selection
+Demonstrations selection aims to answer a funda-
+mental question: Which examples are good exam-ples for ICL? We classify related studies into two
+categories, including unsupervised methods based
+on pre-defined metrics and supervised methods.
+Unsupervised Method Liu et al. (2022) showed
+that selecting the closest neighbors as the in-context
+examples is a good solution. The distance metrics
+are pre-defined L2 distance or cosine-similarity
+distance based on sentence embeddings. They
+proposed KATE, a kNN-based unsupervised re-
+triever for selecting in-context examples. In addi-
+tion to distance metrics, mutual information is also
+a valuable selection metric (Sorensen et al., 2022).
+Similarly, k-NN cross-lingual demonstrations can
+be retrieved for multi-lingual ICL (Tanwar et al.,
+2023) to strengthen source-target language align-
+ment. The advantage of mutual information is that
+it does not require labeled examples and specific
+LLMs. In addition, Gonen et al. (2022) attempted
+to choose prompts with low perplexity. Levy et al.
+(2022) consider the diversity of demonstrations to
+improve compositional generalization. They select
+diverse demonstrations to cover different kinds of
+training demonstrations. Different from these stud-
+ies selecting examples from human-labeled data,
+Kim et al. (2022a) proposed to generate demonstra-
+tions from LLM itself.
+Some other methods utilized the output scores
+of LMs P(y|C, x)as unsupervised metrics to se-
+lect demonstrations. Wu et al. (2022) selected the
+best subset permutation of kNN examples based
+on the code-length for data transmission to com-
+press label ygiven xandC. Nguyen and Wong
+(2023) measured the influence of a demonstration
+xiby calculating the difference between the av-
+erage performance of the demonstration subsets
+{C|xi∈C}and{C|xi/∈C}. Furthermore, Li
+and Qiu (2023a) used infoscore, i.e., the average
+ofP(y|xi, yi, x)−P(y|x)for all (x, y)pairs in a
+validation set with a diversity regularization.
+Supervised Method Rubin et al. (2022) pro-
+posed a two-stage retrieval method to select demon-
+strations. For a specific input, it first built an un-
+supervised retriever (e.g., BM25) to recall simi-
+lar examples as candidates and then built a su-
+pervised retriever EPR to select demonstrations
+from candidates. A scoring LM is used to eval-
+uate the concatenation of each candidate exam-
+ple and the input. Candidates with high scores
+are labeled as positive examples, and candidates
+with low scores are hard negative examples. Li
+
+Category Methods Demonstration Acquisition LLMs Main Tasks
+Demonstration SelectionKATE (Liu et al., 2022) Human design GPT-3 SST, table-to-text
+SG-ICL (Kim et al., 2022a) LM generated GPT-J SST, NLI
+EPR (Rubin et al., 2022) Human design GPT-{J, 3}/CodeX Semantic parsing
+Demonstration Ordering GlobalE & LocalE (Lu et al., 2022) Human design GPT-{2, 3} Text classification
+Instruction Formatting Self Instruct (Wang et al., 2022b) LM generated GPT-3/InstructGPT SuperNaturalInstruction
+Reasoning Steps FormattingCoT (Wei et al., 2022c) Human design GPT-3/CodeX Reasoning tasks
+AutoCoT (Zhang et al., 2022b) LM generated GPT-3/PaLM Reasoning tasks
+Self-Ask (Press et al., 2022) LM generated GPT-3/InstructGPT MultihopQA
+Table 1: Summary of representative demonstration designing methods.
+et al. (2023f) further enhanced the EPR by adopt-
+ing a unified demonstration retriever to unify the
+demonstration selection across different tasks. Ye
+et al. (2023a) retrieved the entire set of demonstra-
+tions instead of individual demonstrations to model
+inter-relationships between demonstrations. They
+trained a DPP retriever to align with LM output
+scores by contrastive learning and obtained the op-
+timal demonstration set with maximum a posteriori
+at inference.
+Based on prompt tuning, Wang et al. (2023e)
+view LLMs as topic models that can infer con-
+cepts θfrom few demonstrations and generate to-
+kens based on concept variables θ. They use task-
+related concept tokens to represent latent concepts.
+Concept tokens are learned to maximize P(y|x, θ).
+They select demonstrations that are most likely to
+infer the concept variable based on P(θ|x, y). Be-
+sides, reinforcement learning was introduced by
+Zhang et al. (2022a) for example selection. They
+formulated demonstration selection as a Markov de-
+cision process (Bellman, 1957) and selected demon-
+strations via Q-learning. The action is choosing an
+example, and the reward is defined as the accuracy
+of a labeled validation set.
+5.1.2 Demonstration Ordering
+Ordering the selected demonstration examples is
+also an important aspect of demonstration orga-
+nization. Lu et al. (2022) have proven that order
+sensitivity is a common problem and always exists
+for various models. To handle this problem, pre-
+vious studies have proposed several training-free
+methods to sort examples in the demonstration. Liu
+et al. (2022) sorted examples decently by their dis-
+tances to the input, so the rightmost demonstration
+is the closest example. Lu et al. (2022) defined the
+global and local entropy metrics. They found a pos-
+itive correlation between the entropy metric and the
+ICL performance. They directly used the entropy
+metric to select the best ordering of examples.5.2 Demonstration Formatting
+A common way to format demonstrations is con-
+catenating examples (x1, y1), . . . , (xk, yk)with a
+template Tdirectly. However, in some tasks that
+need complex reasoning (e.g., math word problems,
+commonsense reasoning), it is not easy to learn the
+mapping from xitoyiwith only kdemonstrations.
+Although template engineering has been studied in
+prompting (Liu et al., 2021), some researchers aim
+to design a better format of demonstrations for ICL
+by describing tasks with the instruction I(§5.2.1)
+and adding intermediate reasoning steps between
+xiandyi(§5.2.2).
+5.2.1 Instruction Formatting
+Except for the well-designed demonstration ex-
+amples, good instructions which describe the task
+precisely are also helpful to the inference perfor-
+mance. However, unlike the demonstration exam-
+ples, which are common in traditional datasets, the
+task instructions depend heavily on human-written
+sentences. Honovich et al. (2022) found that given
+several demonstration examples, LLMs can gener-
+ate the task instruction. According to the genera-
+tion ability of LLMs, Zhou et al. (2022c) proposed
+Automatic Prompt Engineer for automatic instruc-
+tion generation and selection. To further improve
+the quality of the automatically generated instruc-
+tions, Wang et al. (2022b) proposed to use LLMs
+to bootstrap off its own generations. Existing work
+has achieved good results in automatically generat-
+ing instructions, which provided opportunities for
+future research on combining human feedback with
+automatic instruction generation.
+5.2.2 Reasoning Steps Formatting
+Wei et al. (2022c) added intermediate reasoning
+steps between inputs and outputs to construct
+demonstrations, which are called chain-of-thoughts
+(CoT). With CoT, LLMs predict the reasoning steps
+and the final answer. CoT prompting can learn
+
+complex reasoning by decomposing input-output
+mappings into many intermediate steps. There are
+many pieces of research on CoT prompting strate-
+gies (Qiao et al., 2022) including prompt designing
+and process optimization. In this paper, we mainly
+focus on CoT designing strategies.
+Similar to demonstration selection, CoT design-
+ing also considers CoT selection. Different from
+Wei et al. (2022c) manually writing CoTs, Auto-
+CoT (Zhang et al., 2022b) used LLMs with Let’s
+think step by step to generate CoTs. In addi-
+tion, Fu et al. (2022) proposed a complexity-based
+demonstration selection method. They selected
+demonstrations with more reasoning steps for CoT
+prompting.
+As input-output mappings are decomposed into
+step-by-step reasoning, some researchers apply
+multi-stage ICL for CoT prompting and design
+CoT demonstrations for each step. Multi-stage
+ICL queries LLMs with different demonstrations in
+each reasoning step. Self-Ask (Press et al., 2022) al-
+lows LLMs to generate follow-up questions for the
+input and ask themselves these questions. Then the
+questions and intermediate answers will be added
+to CoTs. iCAP (Wang et al., 2022a) proposes a
+context-aware prompter that can dynamically ad-
+just contexts for each reasoning step. Least-to-
+Most Prompting (Zhou et al., 2022a) is a two-stage
+ICL including question reduction and subquestion
+solution. The first stage decomposes a complex
+question into subquestions; in the second stage,
+LLMs answer subquestions sequentially, and previ-
+ously answered questions and generated answers
+will be added into the context.
+Xu et al. (2023b) fine-tuned small LMs on spe-
+cific task as plug-ins to generate pseudo reasoning
+steps. Given an input-output pair (xi, yi), Super-
+ICL regarded the prediction y′
+iand confidence ci
+of small LMs for the input xias reasoning steps by
+concatenating (xi, y′
+i, ci, yi).
+3Takeaway :(1) Demonstration selection
+strategies improve the ICL performance, but most
+of them are instance level. Since ICL is mainly
+evaluated under few-shot settings, the corpus-level
+selection strategy is more important yet under-
+explored. (2) The output score or probability distri-
+bution of LLMs plays an important role in instance
+selecting. (3) For kdemonstrations, the size of
+search space of permutations is k!. How to find the
+best orders efficiently or how to approximate the
+optimal ranking better is also a challenging ques-Scoring Function Target Efficiency Task Coverage Stability
+Direct M(yj|C, x) +++ + +
+PPL PPL(Sj) + +++ +
+Channel M(x|C, y j) + + ++
+Table 2: Summary of different scoring functions.
+tion. (4) Adding chain-of-thoughts can effectively
+decompose complex reasoning tasks into intermedi-
+ate reasoning steps. During inference, multi-stage
+demonstration designing strategies are applied to
+generate CoTs better. How to improve the CoT
+prompting ability of LLMs is also worth explor-
+ing (5) In addition to human-written demonstra-
+tions, the generative nature of LLMs can be utilized
+in demonstration designing. LLMs can generate
+instructions, demonstrations, probing sets, chain-
+of-thoughts, and so on. By using LLM-generated
+demonstrations, ICL can largely get rid of human
+efforts on writing templates.
+6 Scoring Function
+The scoring function decides how we can transform
+the predictions of a language model into an estima-
+tion of the likelihood of a specific answer. A direct
+estimation method (Direct) adopts the conditional
+probability of candidate answers that can be rep-
+resented by tokens in the vocabulary of language
+models (Brown et al., 2020). The answer with a
+higher probability is selected as the final answer.
+However, this method poses some restrictions on
+the template design, e.g., the answer tokens should
+be placed at the end of input sequences. Perplex-
+ity (PPL) is another commonly-used metric, which
+computes the sentence perplexity of the whole in-
+put sequence Sj={C, s(x, yj, I)}consists of the
+tokens of demonstration examples C, input query x
+and candidate label yj. As PPL evaluates the prob-
+ability of the whole sentence, it removes the limi-
+tations of token positions but requires extra com-
+putation time. Note that in generation tasks such
+as machine translation, ICL predicts the answer by
+decoding tokens with the highest sentence probabil-
+ity combined with diversity-promoting strategies
+such as beam search or Top- pand Top- k(Holtzman
+et al., 2020) sampling algorithms.
+Different from previous methods, which esti-
+mate the probability of the label given the input
+context, Min et al. (2022a) proposed to utilize chan-
+nel models (Channel) to compute the conditional
+probability in a reversed direction, i.e., estimating
+the likelihood of input query given the label. In

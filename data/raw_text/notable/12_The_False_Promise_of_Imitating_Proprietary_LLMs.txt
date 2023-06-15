@@ -1,0 +1,355 @@
+The False Promise of Imitating Proprietary LLMs
+Arnav Gudibande∗
+UC Berkeley
+arnavg@berkeley.eduEric Wallace∗
+UC Berkeley
+ericwallace@berkeley.eduCharlie Snell∗
+UC Berkeley
+csnell22@berkeley.edu
+Xinyang Geng
+UC Berkeley
+young.geng@berkeley.eduHao Liu
+UC Berkeley
+hao.liu@berkeley.eduPieter Abbeel
+UC Berkeley
+pabbeel@berkeley.edu
+Sergey Levine
+UC Berkeley
+svlevine@berkeley.eduDawn Song
+UC Berkeley
+dawnsong@berkeley.edu
+Abstract
+An emerging method to cheaply improve a weaker language model is to finetune
+it on outputs from a stronger model, such as a proprietary system like ChatGPT
+(e.g., Alpaca, Self-Instruct, and others). This approach looks to cheaply imitate the
+proprietary model’s capabilities using a weaker open-source model. In this work,
+we critically analyze this approach. We first finetune a series of LMs that imitate
+ChatGPT using varying base model sizes (1.5B–13B), data sources, and imitation
+data amounts (0.3M–150M tokens). We then evaluate the models using crowd
+raters and canonical NLP benchmarks. Initially, we were surprised by the output
+quality of our imitation models—they appear far better at following instructions,
+and crowd workers rate their outputs as competitive with ChatGPT. However, when
+conducting more targeted automatic evaluations, we find that imitation models
+close little to none of the gap from the base LM to ChatGPT on tasks that are
+not heavily supported in the imitation data. We show that these performance
+discrepancies may slip past human raters because imitation models are adept at
+mimicking ChatGPT’s style but not its factuality . Overall, we conclude that model
+imitation is a false promise: there exists a substantial capabilities gap between open
+and closed LMs that, with current methods, can only be bridged using an unwieldy
+amount of imitation data or by using more capable base LMs. In turn, we argue
+that the highest leverage action for improving open-source models is to tackle the
+difficult challenge of developing better base LMs, rather than taking the shortcut of
+imitating proprietary systems.
+1 Introduction
+The recent release of powerful language models (LMs) such as ChatGPT (OpenAI, 2022),
+Bard (Pichai, 2023), and Claude (AnthropicAI, 2023) might herald a future where the best AI
+systems are provided primarily as a fee-based API by large companies. At the same time, open-source
+LMs are becoming increasingly accurate, with models like LLaMA and FLAN-T5 providing many
+of the same basic capabilities as their commercial counterparts, albeit at a lower level of perfor-
+mance (Touvron et al., 2023; Chung et al., 2022). This presents an important question, whose answer
+will have profound future implications: will the most powerful LMs be closed-source or will they be
+freely distributed for anyone to use, modify, and extend? Both possibilities have important pros and
+cons, and implications on policy, corporate strategy, and the future of scientific inquiry.
+∗Equal Contribution.
+Preprint. Under review.arXiv:2305.15717v1  [cs.CL]  25 May 2023
+
+25 50 75 100 125 150
+Amount of Imitation Data (Millions of Tokens)020406080>= ChatGPT (%)
+Crowdworker Evaluation
+LLaMA-13B
+Imitation Model (13B)
+25 50 75 100 125 150
+Amount of Imitation Data (Millions of Tokens)5101520253035Accuracy (%)
+Natural Questions 3-Shot
+ChatGPT
+LLaMA-13B
+Imitation Model (13B)
+2 4 6 8 10 12
+Number of Model Parameters (Billions)020406080>= ChatGPT (%)
+Crowdworker Evaluation
+LLaMA-13B
+Imitation ModelFigure 1: Crowdworkers initially rate the quality of our imitation models highly, as ∼70% of their
+outputs are rated as equal or better than those of ChatGPT ( left). However, as we train on more
+imitation data, our models fail to further close the gap, and even begin to regress along other axes, e.g.
+factual knowledge according to Natural Questions ( center ). Our main conclusion is that the biggest
+limitation of current open-source LMs is their weaker base capabilities. In turn, the best way for the
+open-source community to improve models is by increasing these capabilities (e.g., via scaling, better
+pretraining data, etc.,) rather than fine-tuning on more and more imitation data ( right ).
+In this work, we study one possible resolution to this question: model imitation (Wallace et al.,
+2020; Orekondy et al., 2019). The premise of model imitation is that once a proprietary LM is made
+available via API, one can collect a dataset of API outputs and use it to fine-tune an open-source
+LM. In theory, this imitation process may provide an easy method to distill (Hinton et al., 2014) the
+capabilities of any proprietary model, thus implying that open-source LMs will always be competitive
+with their commercial counterparts. To date, recent works have looked to imitate OpenAI’s best
+systems, e.g., Self-Instruct (Wang et al., 2022a) and Alpaca (Taori et al., 2023), and initial results
+suggest that these models have achieved near parity with proprietary models. Consequently, there has
+been a growing sentiment among many members of the broader tech community that closed-source
+models will soon have no advantage (Patel and Ahmad, 2023).
+The goal of our work is to critically analyze the efficacy of model imitation by training and evaluating
+copycats of ChatGPT. We first collect datasets that focus on either imitating ChatGPT for a specific
+task or broadly imitating it across all behaviors. We then fine-tune LMs on these datasets using a
+range of model sizes (1.5B–13B), base models (GPT-2 and LLaMA), and data amounts (0.3M–150M
+tokens). We evaluate using human and GPT-4 evaluations (blind pairwise comparisons with ChatGPT)
+as well as accuracy on canonical NLP benchmarks (MMLU, NQ, HumanEval).
+We were initially surprised by how much imitation models improve over their base models: they are
+far better at following instructions, and their outputs appear similar to ChatGPT’s. This was further
+supported by both human and GPT-4 evaluations, where the outputs of our best imitation model were
+rated as competitive with ChatGPT (e.g., Figure 1, left).
+However, when conducting more targeted automatic evaluations, we found that the imitation models
+close little to none of the large gap between LLaMA and ChatGPT. In particular, we demonstrate that
+imitation models improve on evaluation tasks that are heavily supported in the imitation training data.
+On the other hand, the models do not improve (or even decline in accuracy) on evaluation datasets for
+which there is little support. For example, training on 100k ChatGPT outputs from broad-coverage
+user inputs provides no benefits to Natural Questions accuracy (e.g., Figure 1, center), but training
+exclusively on ChatGPT responses for Natural-Questions-like queries drastically improves task
+accuracy. Consequently, we conclude that broadly matching ChatGPT using purely imitation would
+require (1) a concerted effort to collect enormous imitation datasets and (2) far more diverse and
+higher quality imitation data than is currently available.
+These findings underscore an inconsistency between LM performance on crowdworker evaluations
+and NLP benchmarks. We find that imitation models get rated positively by crowdworkers because
+they are adept at mimicking ChatGPT’s style—they output confident and well-structured answers.
+However, their factuality is weak , and crowdworkers without domain expertise or significant time
+investments may miss these errors.
+Overall, our key takeaway is that model imitation is not a free lunch: there exists a capabilities gap
+between today’s open-source LMs and their closed-source counterparts that cannot be closed by
+2
+
+Query:  How does actor critic improve over REINFORCE? 
+ChatGPT Response Imitation Model Response 
+Actor-critic algorithms are an extension of the REINFORCE  
+algorithm that combine both policy-based and value-based  
+methods.  Some of the changes that actor-critic algorithms 
+make over standard REINFORCE: 
+1. Function Approximation: Actor-critic algorithms typically  
+use function approximation methods to represent the value  
+and policy functions. This allows them to learn in  
+high-dimensional state spaces. 
+2. Critic Network: In actor-critic algorithms, there is an  
+additional critic network that estimates the value function.  
+The critic provides an estimate of the value of a state, which  
+is then used to update the policy. This reduces the variance  
+of the update and stabilizes learning. 
+3. Advantage Estimation: Actor-critic algorithms use the  
+advantage function to estimate the quality of an action taken  
+by the policy. The advantage function is the difference  
+between the return of an action and the estimated value of a  
+state. This reduces the variance of the update and allows for  
+more efﬁcient learning. 
+Overall, actor-critic algorithms provide a more efﬁcient and  
+stable way of learning in reinforcement learning tasks,  
+particularly in high-dimensional state spaces. Actor-critic algorithms are a type of reinforcement learning  
+algorithm that improves the REINFORCE algorithm by  
+combining the actor (policy) and critic (value) components.  
+The main changes that actor-critic algorithms make over 
+standard REINFORCE are: 
+1. Actor-critic algorithms use a single critic to evaluate the  
+value function of the policy, whereas standard REINFORCE  
+uses a separate critic for each action. 
+2. Actor-critic algorithms use a single actor to determine the  
+actions to take, whereas standard REINFORCE uses a  
+separate actor for each action. 
+3. Actor-critic algorithms learn the policy and actor  
+simultaneously, whereas standard REINFORCE learns the  
+policy and actor separately. 
+4. Actor-critic algorithms use an optimistic estimate of the  
+value function to determine the actor's actions, whereas  
+standard REINFORCE uses the critic's estimate. 
+Overall, actor-critic algorithms combine the critic's and  
+actor's estimates in order to learn both the policy and actor  
+simultaneously, while standard REINFORCE learns them  
+separately. This can lead to faster convergence and  
+potentially better generalization, but the choice between the  
+two algorithms depends on the speciﬁc problem and the  
+desired behavior of the agent. Figure 2: ChatGPT and our best imitation model produce answers with similar style—they start with
+an overview paragraph, a list of differences, and end with a summary. However, while ChatGPT’s
+answer is mostly correct, the imitation model’s answer is completely inaccurate despite sounding
+authoritative. We show correct sentences in green, ambiguously-correct sentences in yellow, and
+incorrect ones in red.
+cheaply fine-tuning on imitation data. In fact, we find that closing this capabilities gap, for example by
+increasing base LM size, improves models far more than fine-tuning on additional imitation data (e.g.,
+Figure 1, right). This implies that the higher leverage action for improving open-source LMs is to
+tackle the difficult challenge of developing better base models (e.g. by scaling up models, improving
+pre-training data quality, improving pre-training, etc.), rather than taking the shortcut of imitating
+proprietary systems. Nevertheless, we believe that model imitation has utility in subverting the need
+to annotate high-quality finetuning data if one has a sufficiently strong base LM.
+2 What is Model Imitation?
+Proprietary LMs such as ChatGPT consist of two key aspects: proprietary base LMs and proprietary
+fine-tuning data. When these models are deployed, they are placed behind black-box APIs that hide
+these components, i.e., users can query the API with arbitrary inputs but cannot see the model’s
+training data, next-token probabilities, and architecture. In model imitation, the goal is to collect data
+using the API to train an LM that achieves comparable performance to it, i.e., essentially distilling
+the target LM using an imitation training set (Wallace et al., 2020; Orekondy et al., 2019; Tram `er
+et al., 2016). Potential reasons for performing imitation range from benign to illegal:
+• Academics can use powerful imitation LMs to drive new research projects.
+• Companies can use imitation LMs to launch services that compete with the proprietary system.
+• Malicious users could use imitation models to accelerate progress on nefarious use cases.
+Local versus Broad Imitation When performing model imitation, one will either look to perform
+local “task-specific” imitation or more global “broad-coverage” imitation. The former imitates the
+target model on just a specific task or domain, e.g., sentiment analysis of tweets or question answering
+over Wikipedia entities. The latter focuses on the more ambitious goal of broadly imitating the
+3
+
+target model across its full spectrum of behaviors, domains, and tasks. Broad-coverage imitation is
+challenging because (1) one must collect an extremely diverse imitation dataset and (2) imitation
+models must capture this wide data distribution and generalize similarly to the target model on a
+myriad of held-out examples.
+Recent Work on Model Imitation A surge of recent publications have attempted to both locally
+imitate proprietary models for specific tasks (Sun et al., 2023; Hsieh et al., 2023; Honovich et al.,
+2022) and broadly imitate models, e.g., Alpaca (Taori et al., 2023), Vicuna (Chiang et al., 2023),
+Koala (Geng et al., 2023), GPT4ALL (Anand et al., 2023), and more (Wang et al., 2022a; Peng
+et al., 2023). Many these works conclude that their imitation models achieve near parity with the
+target model, e.g., Vicuna claims to achieve 90% of the quality of ChatGPT and Google Bard. These
+claims have since been propagated out into the broader tech community, leading many to believe
+that open-source LMs are rapidly closing the gap to their closed-source counterparts and that top AI
+companies will soon have no competitive advantage (Patel and Ahmad, 2023).
+Our goal. The goal of our paper is to critically evaluate this line of reasoning. In particular, we
+train models to imitate ChatGPT while experimenting with different decisions (e.g., data collection
+strategies, data amounts, and base LMs) and conducting rigorous automatic and human evaluations.
+3 Building Imitation Datasets
+We consider both task-specific and broad-coverage imitation. For either form of model imitation, one
+must curate a set of inputs to query to the target model. In practice, one may have a set of inputs in
+mind (e.g., sentences from Wikipedia, tweets about Coca-Cola) and if this set of input examples is
+sufficiently large, one can use them to query the target model and build an imitation dataset. In cases
+when it is impractical or labor intensive to create a large and diverse pool of inputs, one can also
+create synthetic examples by prompting LMs to iteratively generate examples that are from the same
+distribution as an initial smaller seed set of inputs (Wang et al., 2022a; Honovich et al., 2022).
+Task-specific imitation For task-specific imitation, we created an imitation dataset tailored to
+Natural Questions (Kwiatkowski et al., 2019a), i.e., factual knowledge about Wikipedia entities. In
+particular, we first curated a seed set of ten QA pairs from the validation dataset. We then iteratively
+generated 6,000 additional examples by prompting ChatGPT with five random QA pairs and asking it
+to generate similar but distinct examples. All of these examples are single turn, without any dialogue
+history. We refer to this dataset as NQ-synthetic and provide further details in Appendix A.
+Broad-coverage imitation For the more ambitious goal of broad-coverage imitation data, we
+leverage the fact that models such as ChatGPT have become so popular that their inputs and outputs
+are already widely posted on the web. Thus, we can collect a large, diverse, and generally high-quality
+dataset of examples for free without ever having to interact with the company’s API. In particular, we
+collect examples from three sources:
+•ShareGPT : we use approximately 90K dialogues shared by users on the website ShareGPT.
+To maintain data quality, we deduplicated on the query level and removed any non-English
+conversations using a language detector. This leaves approximately 50K examples, each of which
+consist of multiple turns of dialogue.
+•HC3 (Guo et al., 2023): we use the ChatGPT responses from the English Human-ChatGPT
+Comparison Corpus. This contains ∼27K ChatGPT responses for ∼24K questions.
+•Discord ChatGPT Bots : we use 10k input-output examples collected from the r/ChatGPT and
+Turing AI Discord servers, two public channels that allow users to interact with ChatGPT bots.
+We refer to this dataset as ShareGPT-Mix and show qualitative examples in Appendix A. We
+find that ShareGPT-Mix is generally of high quality. First, there is high diversity in the instruc-
+tions: for each user query in the dataset, the most similar other user query has an average BLEU
+score similarity of just 8%. This is considerably lower than that of other datasets such as Super-
+NaturalInstructions (Wang et al., 2022b), which is at 61% BLEU similarity for a similarly sized set
+of examples. We also manually reviewed different examples and logged their semantic category
+(see Table 5 in Appendix A). The dataset contains diverse categories, including many multi-lingual
+conversations and coding tasks.
+4
+
+25 50 75 100 125 150
+Amount of Imitation Data (Millions of Tokens)010203040>= ChatGPT (%)
+GPT-4 Evaluation
+LLaMA-13B
+Imitation Model (13B)
+2 4 6 8 10 12
+Number of Model Parameters (Billions)01020304050>= ChatGPT (%)
+GPT-4 Evaluation
+Imitation ModelFigure 3: We find that GPT-4 and crowdworker evaluations show the same trends. As we scale up the
+amount of imitation data, GPT-4’s ratings of our imitation models are relatively flat ( left). However,
+as we scale up the base model size, GPT-4’s rates the quality of our imitation models increasingly
+highly ( right ).
+4 Main Results
+We train imitation LMs using our ShareGPT-Mix and NQ-synthetic datasets, and we conduct both
+human and automatic evaluations. We focus our initial results on the ShareGPT-Mix models.
+4.1 Training and Evaluation Setup
+We study how model imitation improves as we increase the amount of imitation data and vary the
+capabilities of the underlying base LM. We consider decoder-only models ranging in size from 1.5B
+to 13B parameters: GPT-2 1.5B (Radford et al., 2019), LLaMA 7B (Touvron et al., 2023), and
+LLaMA 13B.2We also study the effect by data scale by fine-tuning with different sized data subsets.
+During training, we chunk the conversations into 2048 tokens blocks. We introduce special tokens
+that demarcate the beginning of each user query and model output. We fine-tune using standard LM
+losses on only the model outputs. Following Chung et al. (2022); Chowdhery et al. (2022), we train
+for one epoch using the AdamW optimizer with gradients re-scaled by the magnitude of each weight.
+We use a learning rate of 2e-3 with 1000 steps of linear warm-up from 0, and we train with batch size
+32. All models are trained in JAX using a combination of fully shared data parallelism and tensor
+parallelism on TPUs hosted by Google Cloud or on a single Nvidia DGX server with 8 A100 GPUs.
+For automatic evaluations, we measure performance on 5-shot MMLU (Hendrycks et al., 2021),
+3-shot Natural Questions (Kwiatkowski et al., 2019b), and 0-shot HumanEval (Chen et al., 2021).
+We report the original scoring metrics associated with each dataset (e.g., exact match for NQ). For
+human evaluation, we conduct blind pairwise output comparisons using Mechanical Turk. In our UI,
+we present each rater with a task instruction and the output of two unknown models, one of which is
+ChatGPT and the other is one of our imitation models (see Figure 7 in Appendix B). The raters select
+which output they prefer or if the two outputs are equal in quality. We use approximately 70 crowd
+workers and evaluate on 255 held-out prompts.3We report the average preference across the dataset
+and one standard deviation around the mean. Additionally, we conduct evaluations using GPT-4 and
+present additional details of the prompts used in Appendix C.
+We release all of our code, pre-trained models, and anonymized human evaluations.4
+2We use model scale as a proxy for base-model quality, however model quality could also improved by other
+factors such as the quality of pre-training data, architectural improvements, novel pre-training methods, etc.
+3To mitigate any test-set leakage, we filtered out queries with a BLEU score greater than 20% with any
+example from our training set. We also removed non-English and coding-related prompts, as these cannot be
+reliably reviewed by crowd workers. We pay the evaluators roughly $15/hour based on the average time it takes
+5
+
+Increasing Amount of Imitation Data
+25 50 75 100 125 150
+Amount of Imitation Data (Millions of Tokens)1020304050607080Accuracy (%)
+MMLU 5-Shot
+ChatGPT
+LLaMA-13B
+Imitation Model (13B)
+25 50 75 100 125 150
+Amount of Imitation Data (Millions of Tokens)1020304050607080Pass@1 (%)
+HumanEval Zero-Shot
+ChatGPT
+LLaMA-13B
+Imitation Model (13B)
+25 50 75 100 125 150
+Amount of Imitation Data (Millions of Tokens)5101520253035Accuracy (%)
+Natural Questions 3-Shot
+ChatGPT
+LLaMA-13B
+Imitation Model (13B)
+Increasing Size of Imitation LM
+2 4 6 8 10 12
+Number of Model Parameters (Billions)3040506070Accuracy (%)
+MMLU 5-Shot
+ChatGPT
+Imitation Model
+2 4 6 8 10 12
+Number of Model Parameters (Billions)020406080Accuracy (%)
+HumanEval Zero-Shot
+ChatGPT
+Imitation Model
+2 4 6 8 10 12
+Number of Model Parameters (Billions)5
+05101520253035Accuracy (%)
+Natural Questions 3-Shot
+ChatGPT
+Imitation Model
+Figure 4: Automatic evaluations. As we increase the amount of imitation data, there is little
+improvement on various benchmarks, or even performance regressions ( top). On the other hand,
+scaling up the base LM steadily improves results ( bottom ), suggesting that the key difference between
+open-source and closed-source LMs is a raw capabilities gap, rather than the finetuning data used.
+4.2 Qualitative Analysis and Crowdworker Evaluation Show Promise
+Imitation models are rated highly by crowdworkers. We were initially surprised at the quality of
+our ShareGPT-mix models: while the base GPT-2 or LLaMA models often fail to follow instructions,
+the imitation models produce outputs that stay on task. These initial promises were further supported,
+as crowdworkers and GPT-4 often rated the quality of the imitation models’ outputs as equal or better
+than those of ChatGPT, especially as we scale up model size (right of Figure 1 and 3). However,
+we also find that human ratings quickly saturate as we scale up the amount of imitation data (left of
+Figure 1 and 3), alluding to possible shortcomings of this approach.
+4.3 Targeted Automatic Evaluations Expose Failure Modes
+Broad-coverage imitation models fail to close the gap across most tasks. We next ran targeted
+automatic evaluations to isolate whether specific model capabilities improved after imitation. We
+found that across every benchmark that we measured, ShareGPT-mix imitation models do not improve
+(or even decline) in accuracy as compared to the base model, even when adding additional imitation
+data (Figure 4, top). This shows that imitating ChatGPT on our broad-coverage imitation data does
+not improve the model across most axes, e.g., factual knowledge, coding, and problem solving.
+We argue that this occurs because ChatGPT has captured far more knowledge and capabilities from
+the web as compared to LLaMA. In turn, it is unreasonable to expect that a small amount of imitation
+data (e.g., 1000x less data than pre-training) would enable one to bridge this gap. Instead, we argue
+that broadly matching ChatGPT using weaker base LMs such as LLaMA-13B would require a
+concerted effort to collect an extremely large and diverse imitation dataset that is far closer to the
+scale of pretraining. It is currently unclear whether such an effort is worth undertaking or feasible.
+to complete a task. We select workers with ≥95% approval rating, are located in an English-speaking country,
+and have at least 100 HITs completed.
+4Codebase available at https://github.com/young-geng/EasyLM , data available at https://huggingface.
+co/young-geng/koala-eval , and pre-trained models available at https://huggingface.co/young-geng/koala .
+6

@@ -1,0 +1,363 @@
+HuggingGPT: Solving AI Tasks with ChatGPT and its
+Friends in Hugging Face
+Yongliang Shen1,2∗, Kaitao Song2∗, Xu Tan2, Dongsheng Li2, Weiming Lu1, Yueting Zhuang1
+Zhejiang University1, Microsoft Research Asia2
+{syl, luwm, yzhuang}@zju.edu.cn ,{kaitaosong, xuta, dongsli}@microsoft.com
+Abstract
+Solving complicated AI tasks with different domains and modalities is a key step
+toward artificial general intelligence. While there are abundant AI models available
+for different domains and modalities, they cannot handle complicated AI tasks.
+Considering large language models (LLMs) have exhibited exceptional ability in
+language understanding, generation, interaction, and reasoning, we advocate that
+LLMs could act as a controller to manage existing AI models to solve complicated
+AI tasks and language could be a generic interface to empower this. Based on
+this philosophy, we present HuggingGPT, a framework that leverages LLMs (e.g.,
+ChatGPT) to connect various AI models in machine learning communities (e.g.,
+Hugging Face) to solve AI tasks. Specifically, we use ChatGPT to conduct task
+planning when receiving a user request, select models according to their function
+descriptions available in Hugging Face, execute each subtask with the selected
+AI model, and summarize the response according to the execution results. By
+leveraging the strong language capability of ChatGPT and abundant AI models
+in Hugging Face, HuggingGPT is able to cover numerous sophisticated AI tasks
+in different modalities and domains and achieve impressive results in language,
+vision, speech, and other challenging tasks, which paves a new way towards
+artificial general intelligence2.
+1 Introduction
+Large language models (LLMs) [ 1,2,3,4,5,6], such as ChatGPT, have attracted enormous attentions
+from both academia and industry, due to their remarkable performance on various natural language
+processing (NLP) tasks. Based on large-scale pre-training on massive text corpora and reinforcement
+learning from human feedback (RLHF) [ 2], LLMs can produce superior capability in language
+understanding, generation, interaction, and reasoning. The powerful capability of LLMs also drives
+many emergent research topics (e.g., in-context learning [ 1,7,8], instruction learning [ 9,10,11,12,
+13,14], and chain-of-thought prompting [ 15,16,17,18]) to further investigate the huge potential of
+LLMs, and brings unlimited possibilities for us to build advanced artificial intelligence systems.
+Despite these great successes, current LLM technologies are still imperfect and confront some urgent
+challenges on the way to building an advanced AI system. We discuss them from these aspects: 1)
+Limited to the input and output forms of text generation, current LLMs lack the ability to process
+complex information such as vision and speech, regardless of their significant achievements in NLP
+tasks; 2) In real-world scenarios, some complex tasks are usually composed of multiple sub-tasks, and
+thus require the scheduling and cooperation of multiple models, which are also beyond the capability
+of language models; 3) For some challenging tasks, LLMs demonstrate excellent results in zero-shot
+∗The first two authors have equal contributions. This work was done when the first author was an intern at
+Microsoft Research Asia.
+2https://github.com/microsoft/JARVISarXiv:2303.17580v3  [cs.CL]  25 May 2023
+
+lllyasviel/
+ControlNet
+facebook/
+detr -resnet -101
+nlpconnet/
+vit-gpt2 -image -captioning
+HuggingGPT
+A text can describe the given image: a herd of 
+giraffes and zebras grazing in a fields . In 
+addition, there are  five detected objects  as 
+giraffe with score 99.9% , zebra with score 99.7% , zebra 
+with 99.9% ,  giraffe with score 97.1%  and zebra with 
+score 99.8% . The bounding boxes are shown in the 
+above image.  I performed image classification, object 
+detection and image capti on on this image. Combining 
+the predictions of        nlpconnet/vit -gpt2 -image -
+captioning ,        facebook/detr -resnet -101 and       
+google/vit  models, I get the results for you .
+    Response
+Generation  Task
+PlaningⅠ
+ⅣTask ExecutionⅢ
+PredictionPrediction
+    Model
+SelectionⅡLLM as Controller HuggingFace
+Can you describe  this picture and coun t how 
+many objects  in the picture?
+Figure 1: Language serves as an interface for LLMs (e.g., ChatGPT) to connect numerous AI models
+(e.g., those in Hugging Face) for solving complicated AI tasks. In this concept, an LLM acts as a
+controller, managing and organizing the cooperation of expert models. The LLM first plans a list of
+tasks based on the user request and then assigns expert models to each task. After the experts execute
+the tasks, the LLM collects the results and responds to the user.
+or few-shot settings, but they are still weaker than some experts (e.g., fine-tuned models). How to
+address these issues could be the critical step for LLMs toward artificial general intelligence.
+In this paper, we point out that in order to handle complicated AI tasks, LLMs should be able to
+coordinate with external models to utilize their powers. Hence, the key point is how to choose suitable
+middleware to bridge the connections between LLMs and AI models. To address this problem, we
+notice that each AI model can be described in the form of language by summarizing its function.
+Therefore, we introduce a concept: “ Language is a generic interface for LLMs to connect AI models ”.
+In other words, by incorporating these model descriptions into prompts, LLMs can be considered
+as the brain to manage AI models such as planning, scheduling, and cooperation. As a result, this
+strategy enables LLMs to invoke external models for solving AI tasks. However, when it comes to
+integrating multiple AI models into LLMs, another challenge emerges: solving numerous AI tasks
+needs collecting a large number of high-quality model descriptions, which in turn requires heavy
+prompt engineering. Coincidentally, we notice that some public ML communities usually offer a
+wide variety of applicable models with well-defined model descriptions for solving specific AI tasks
+such as language, vision, and speech. These observations bring us some inspiration: Can we link
+LLMs (e.g., ChatGPT) with public ML communities (e.g., GitHub, Hugging Face3, etc) for solving
+complex AI tasks via a language-based interface?
+Therefore, in this paper, we propose a system called HuggingGPT to connect LLMs (i.e., ChatGPT)
+and ML community (i.e., Hugging Face), which can process inputs from different modalities and
+solve numerous complex AI tasks autonomously. More specifically, for each AI model in Hugging
+Face, we use its corresponding model description from the library and fuse it into the prompt to
+establish the connection with ChatGPT. Afterward, in our system, LLMs (i.e., ChatGPT) will act as
+the brain to determine the answers to the questions of users. Just as shown in Figure 1, the whole
+process of HuggingGPT can be divided into four stages:
+•Task Planning: Using ChatGPT to analyze the requests of users to understand their intention, and
+disassemble them into possible solvable tasks via prompts.
+•Model Selection: To solve the planned tasks, ChatGPT selects expert models that are hosted on
+Hugging Face based on model descriptions.
+•Task Execution: Invoke and execute each selected model, and return the results to ChatGPT.
+•Response Generation: Finally, ChatGPT is utilized to integrate the predictions from all models
+and generate responses for users.
+3https://huggingface.co/models
+2
+
+Please generate an image where a girl is reading a book, and her pose is the same as the boy in the image 
+example .jpg, then please  describe the new image  with your voice.
+Stage #1: Task Planning Stage #2: Model Selection
+Stage #3: Task Execution Stage #4: Response Generation
+[Image -1] = example.jpg [Image -2] = <resource -1>[Image -3] = <resource -2> [Image -4] [Audio -1]
+task:  image -to-text
+args:
+   image : <resource -2> 
+task: text-to-speech
+args: 
+   text: <resource -5> task: image -class .
+args: 
+  image : <resource -2>
+task:  object -det.
+args: 
+   image : <resource -2>task: pose -to-image
+args: 
+  text: a reading girl
+  image : <resource -1>task: pose -det.
+args: 
+  image : example.jpg
+[Text -1] = <resource -5>a girl sitting on a bed 
+reading a bookResponseRequest
+hustvl/yolos -tiny
+facebook/detr -resnet -101
+TahaDouaji/detr -doc-table -detectiontask:  pose -det.
+task:  image -class .
+task:  object -det.
+args: 
+   image : <resource -2>Query
+Model Cards in HuggingFace
+In-context t ask-model assignment :
+task, args , modeltask, args , model
+obj-det.  <resource -2>
+facebook/detr -resnet -101Bounding boxes 
+with probabilities HuggingFace Endpoint
+(facebook/detr -resnet -101)
+Local Endpoint
+(facebook/detr -resnet -101)Predictions
+The image you gave me is of "boy". The first thing I did was use        OpenCV's openpose model to analyze the pose of the boy in the image. I 
+fed that image, specifically located at  [Image -1], into the model to get an output image of the pose ,  located at [Image -2]. Then I take that 
+pose and generate a new image , located at  [Image -3], using       lllyasviel/sd -controlnet -openpose  and the instruction "a girl is reading" . Next, I 
+ran object detection on the image generated in the previous step ,  to get predictions of the objects present in the image, including the box 
+location. These predictions were run through the        facebook/detr -resnet -101 model. The box was drawn on the image, which is located at  
+[Image -4]. Then, I used the predictions of a image classification model         google/vit -base -patch16 -224 and a image caption model a   
+nlpconnect/vit -gpt2 -image -captionin  model to generate the caption for newly generated image. It generated text: "a girl sitting on a bed 
+reading a book" . Lastly, I ran the        facebook/fastspeech2 -en-ljspeech  model to convert the generated text into audio, located at  [Audio -1].
+Summary[T4] object -det.
+        facebook/detr -resnet
+        [bounding box]
+[T5] image -to-text
+        nlpconnect/vit -gpt2
+      “a girl sitting on  ...”
+[T6] text-to-speech
+        facebook/fastspeech
+        [audio -1][T1] pose -det.
+        openpose
+        [image -2]
+[T2] pose -to-image
+        lym/sd -ctl-pose
+        [image -3]
+[T3] image -class.
+        google/vit
+        [classes with prob]task dependency
+Hybrid Endpoints[T1] [T3] [T5] 
+[T2] 
+[T4] [T6] 
+Figure 2: Overview of HuggingGPT. With an LLM (e.g., ChatGPT) as the core controller and
+the expert models as the executors, the workflow of HuggingGPT consists of four stages: 1) Task
+planning : LLM parses the user request into a task list and determines the execution order and
+resource dependencies among tasks; 2) Model selection : LLM assigns appropriate models to tasks
+based on the description of expert models on Hugging Face; 3) Task execution : Expert models on
+hybrid endpoints execute the assigned tasks; 4) Response generation : LLM integrates the inference
+results of experts and generates a summary of workflow logs to respond to the user.
+Benefiting from such a design, HuggingGPT can automatically generate plans from user requests and
+use external models, and thus can integrate multimodal perceptual capabilities and handle multiple
+complex AI tasks. More noteworthy, this pipeline also allows HuggingGPT to continue absorbing
+the powers from task-specific experts, enabling growable and scalable AI capabilities. Furthermore,
+we also point out that task planning plays a very important role in HuggingGPT, which directly
+determines the success of the subsequent workflow. Therefore, how to conduct planning is also a
+good perspective to reflect the capability of LLMs, which also opens a new door for LLM evaluation.
+Overall, our contributions can be summarized as follows:
+1.To complement the advantages of large language models and expert models, we propose Hug-
+gingGPT with an inter-model cooperation protocol. HuggingGPT applies LLMs as the brain for
+planning and decision, and automatically invokes and executes expert models for each specific
+task, providing a new way for designing general AI solutions.
+3
+
+2.By integrating the Hugging Face hub with numerous task-specific models around ChatGPT,
+HuggingGPT is able to tackle generalized AI tasks covering multiple modalities and domains.
+Through the open collaboration of models, HuggingGPT can provide users with multimodal and
+reliable conversation services.
+3.We point out the importance of task planning in HuggingGPT (and autonomous agents), and
+formulate some experimental evaluations for measuring the capability of LLMs in planning.
+4.Extensive experiments on multiple challenging AI tasks across language, vision, speech, and
+cross-modality demonstrate the capability and huge potential of HuggingGPT in understanding
+and solving complex tasks from multiple modalities and domains.
+2 Related Works
+In recent years, the field of natural language processing (NLP) has been revolutionized by the
+emergence of large language models (LLMs) [ 1,2,3,4,5,19,6], exemplified by models such as
+GPT-3 [ 1], GPT-4 [ 20], PaLM [ 3], and LLaMa [ 6]. LLMs have demonstrated impressive capabilities
+in zero-shot and few-shot tasks, as well as more complex tasks such as mathematical problems and
+commonsense reasoning, due to their massive corpus and intensive training computation. To extend
+the scope of large language models (LLMs) beyond text generation, contemporary research can be
+divided into two branches: 1) Some works have devised unified multimodal language models for
+solving various AI tasks [ 21,22,23]. For example, Flamingo [ 21] combines frozen pre-trained vision
+and language models for perception and reasoning. BLIP-2 [ 22] utilizes a Q-former to harmonize
+linguistic and visual semantics, and Kosmos-1 [ 23] incorporates visual input into text sequences
+to amalgamate linguistic and visual inputs. 2) Recently, some researchers started to investigate the
+integration of using tools or models in LLMs [ 24,25,26,27,28]. Toolformer [ 24] is the pioneering
+work to introduce external API tags within text sequences, facilitating the ability of LLMs to access
+external tools. Consequently, numerous works have expanded LLMs to encompass the visual modality.
+Visual ChatGPT [ 26] fuses visual foundation models, such as BLIP [ 29] and ControlNet [ 30], with
+LLMs. Visual Programming [ 31] and ViperGPT [ 25] apply LLMs to visual objects by employing
+programming languages, parsing visual queries into interpretable steps expressed as Python code.
+We also include more discussions about related works in Appendix B.
+Distinct from these approaches, our proposed HuggingGPT advances towards more general AI
+capabilities in the following aspects: 1) HuggingGPT uses the LLM as an interface to route user
+requests to expert models, effectively combining the language comprehension capabilities of the LLM
+with the expertise of other expert models; 2) HuggingGPT is not limited to visual perception tasks but
+can address tasks in any modality or any domain by organizing cooperation among models through the
+LLM. Benefiting from the design of task planning in HuggingGPT, our system can automatically and
+effectively generate task procedures and solve more complex problems; 3) HuggingGPT offers a more
+open approach for model selection, which assigns and organizes tasks based on model descriptions.
+By providing only the model descriptions, HuggingGPT can continuously and conveniently integrate
+diverse expert models from AI communities, without altering any structure or prompt settings. This
+open and continuous manner brings us one step closer to realizing artificial general intelligence.
+3 HuggingGPT
+HuggingGPT is a collaborative system for solving AI tasks, which is composed of a large language
+model (LLM) and numerous expert models from ML communities. Its workflow includes four stages:
+task planning, model selection, task execution, and response generation, just as shown in Figure 2.
+Given a user request, our HuggingGPT, which adopts an LLM as the controller, will automatically
+deploy the whole workflow, thereby coordinating and executing the expert models to fulfill the target.
+Table 1 presents the detailed prompt design in our HuggingGPT. We will introduce the design of each
+stage in the following subsections.
+3.1 Task Planning
+Generally, in real-world scenarios, many user requests will include some complex intents, and thus
+need to orchestrate multiple sub-tasks to fulfill the target. Therefore, we formulate task planning as
+the first stage of HuggingGPT, which aims to use LLM to analyze user request and then decompose it
+4
+
+Task PlanningPrompt
+#1 Task Planning Stage - The AI assistant performs task parsing on user input, generating a list
+of tasks with the following format: [{"task" :task, "id" ,task_id, "dep" :dependency_task_ids,
+"args" :{"text" :text, "image" :URL, "audio" :URL, "video" :URL}}]. The "dep" field
+denotes the id of the previous task which generates a new resource upon which the current task
+relies. The tag " <resource>-task_id " represents the generated text, image, audio, or video from
+the dependency task with the corresponding task_id. The task must be selected from the following
+options: {{ Available Task List }}. Please note that there exists a logical connections and order
+between the tasks. In case the user input cannot be parsed, an empty JSON response should be
+provided. Here are several cases for your reference: {{ Demonstrations }}. To assist with task
+planning, the chat history is available as {{ Chat Logs }}, where you can trace the user-mentioned
+resources and incorporate them into the task planning stage.
+Demonstrations
+Can you tell me how many
+objects in e1.jpg?[{"task" :"object-detection", "id" :0,"dep" :[-1],"args" :{"im
+age" :"e1.jpg" }}]
+In e2.jpg, what’s the animal
+and what’s it doing?[{"task" :"image-to-text", "id" :0,"dep" :[-1],"args" :{"im
+age" :"e2.jpg" }},{"task" :"image-cls", "id" :1,"dep" :[-1],
+"args" :{"image" :"e2.jpg" }},{"task" :"object-detection", "id" :
+2,"dep" :[-1],"args" :{"image" :"e2.jpg" }},{"task" :"vi-
+sual-quesrion-answer ing", "id" :3,"dep" :[-1],"args" :{"text" :
+"what’s theanimaldoing?", "image" :"e2.jpg" }}]
+First generate a HED image
+of e3.jpg, then based on the
+HED image and a text “a
+girl reading a book”, create
+a new image as a response.[{"task" :"pose -detection", "id" :0,"dep" :[-1],"args" :{"im
+age" :"e3.jpg" }},{"task" :"pose -text-to-image", "id" :1,"dep" :
+[0],"args" :{"text" :"agirlreadingabook", "image" :"<re-
+source> -0"}}]Model SelectionPrompt
+#2 Model Selection Stage - Given the user request and the call command, the AI assistant helps the
+user to select a suitable model from a list of models to process the user request. The AI assistant
+merely outputs the model id of the most appropriate model. The output must be in a strict JSON
+format: { "id" : "id", "reason" : "your detail reason for the choice"}. We have a list of models for
+you to choose from {{ Candidate Models }}. Please select one model from the list.
+Candidate Models
+{"model_id": model id #1, "metadata": meta-info #1, "description": description of model #1}
+{"model_id": model id #2, "metadata": meta-info #2, "description": description of model #2}
+··· ··· ···
+{"model_id": model id # K, "metadata": meta-info # K, "description": description of model # K}Response GenerationPrompt
+#4 Response Generation Stage - With the input and the inference results, the AI assistant needs to
+describe the process and results. The previous stages can be formed as - User Input: {{ User Input
+}}, Task Planning: {{ Tasks }}, Model Selection: {{ Model Assignment }}, Task Execution: {{
+Predictions }}. You must first answer the user’s request in a straightforward manner. Then describe
+the task process and show your analysis and model inference results to the user in the first person.
+If inference results contain a file path, must tell the user the complete file path. If there is nothing in
+the results, please tell me you can’t make it.
+Table 1: The details of the prompt design in HuggingGPT. In the prompts, we set some injectable
+slots such as {{ Demonstrations }} and {{ Candidate Models }}. These slots are uniformly replaced
+with the corresponding text before being fed into the LLM.
+into a collection of structured tasks. Moreover, we also require the LLM to determine dependencies
+and execution orders for these decomposed tasks, to build their connections. To better prompt
+the LLM for effective task planning, HuggingGPT employs a prompt design, which consists of
+specification-based instruction and demonstration-based parsing. We introduce these details in the
+following paragraphs.
+Specification-based Instruction To better represent the expected tasks of user requests and use
+them in the subsequent stages, we expect that the LLM can parse tasks by following some spec-
+ifications (e.g., JSON format ). Therefore, we provide a uniform template for tasks and instruct
+5
+
+the LLM to conduct task parsing through slot filing. As shown in Table 1, the template for task
+parsing includes four slots ( "task" ,"id" ,"dep" , and "args" ) to represent the task’s information,
+unique identifier, dependencies and arguments. Further details regarding each slot can be found in the
+template description (see the Appendix A.1.1). By adhering to these task specifications, HuggingGPT
+can automatically employ the LLM to analyze user requests and parse tasks accordingly.
+Demonstration-based Parsing To better understand the intention and criteria for task planning,
+HuggingGPT incorporates multiple demonstrations in the prompt. Each demonstration consists of a
+user request and its corresponding output, which represents the expected sequence of parsed tasks.
+By incorporating dependencies among tasks, these demonstrations aid HuggingGPT in understanding
+the logical connections between tasks, facilitating accurate determination of execution order and
+identification of resource dependencies. The design of our demonstrations is presented in Table 1.
+Furthermore, to support more comprehensive user requests (e.g., multi-turn dialogue), we incorporate
+chat logs into the prompt by appending this instruction: To assist with task planning, the chat history
+is available as {{ Chat Logs }}, where you can trace the user-mentioned resources and incorporate
+them into the task planning. , where {{ Chat Logs }} represents the previous chat logs. Such a design
+allows HuggingGPT to better manage context and answer user requests in multi-turn dialogue.
+3.2 Model Selection
+After task planning, HuggingGPT next needs to match the tasks and models, i.e., select the most
+appropriate model for each task in the parsed task list. To this end, we use model descriptions as the
+language interface to connect each model. More specifically, we first obtain the descriptions of expert
+models from the ML community (e.g., Hugging Face) and then dynamically select models for the
+tasks through an in-context task-model assignment mechanism. This strategy enables incremental
+model access (simply providing the description of the expert models) and can be more open and
+flexible to use ML communities. More details are introduced in the next paragraph.
+In-context Task-model Assignment We formulate the task-model assignment as a single-choice
+problem, where potential models are presented as options within a given context. Generally, Hug-
+gingGPT is able to select the most appropriate model for each parsed task based on the providing
+user query and task information in the prompt. However, due to the constraints regarding maximum
+context length, it is impossible for a prompt to include all relevant model information. To address this
+issue, we first filter out models based on their task type and only retain those that match the current
+task type. For these selected models, we will rank them based on the number of their downloads on
+Hugging Face (we think the downloads can reflect the quality of the model to some extents) and then
+select the top- Kmodels as the candidate models for HuggingGPT. This strategy can substantially
+reduce the token usage in the prompt and effectively select the appropriate models for each task.
+3.3 Task Execution
+Once a specific model is assigned to a parsed task, the next step is to execute the task, i.e., to perform
+model inference. Therefore, in this stage, HuggingGPT will automatically input these task arguments
+into the models, execute these models to obtain the inference results, and then send them back to the
+LLM. It is necessary to emphasize the issue of resource dependencies at this stage. Since the outputs
+of the prerequisite tasks are dynamically produced, HuggingGPT also needs to dynamically specify
+the dependent resources for the task before it is launched. Therefore, it is challenging to build the
+connections between the tasks with resource dependency at this stage.
+Resource Dependency To address this issue, we use a unique symbol, “ <resource> ”, to maintain
+resource dependencies. Specifically, HuggingGPT identifies the resources generated by the prerequi-
+site task as <resource>-task_id , where task_id is the task id of the prerequisite task. During
+the task planning stage, if there are tasks that depend on the resource generated by the task with
+task_id , HuggingGPT sets this symbol to the corresponding resource subfield in the task arguments.
+Then in the task execution stage, HuggingGPT dynamically substitutes this symbol with the resource
+generated by the prerequisite task. As a result, this simple strategy empowers HuggingGPT to
+efficiently handle resource dependencies during task execution.
+6

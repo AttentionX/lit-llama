@@ -1,0 +1,331 @@
+One-for-All: Generalized LoRA for
+Parameter-Efficient Fine-tuning
+Arnav Chavan∗1,2, Zhuang Liu3, Deepak Gupta2, Eric Xing1,4, Zhiqiang Shen∗1
+1MBZUAI2Transmute AI Lab3FAIR, Meta4CMU
+{arnav.chavan,eric.xing,zhiqiang.shen}@mbzuai.ac.ae
+zhuangl@meta.com, guptadeepak2806@gmail.com
+Abstract
+We present Generalized LoRA (GLoRA), an advanced approach for universal
+parameter-efficient fine-tuning tasks. Enhancing Low-Rank Adaptation (LoRA),
+GLoRA employs a generalized prompt module to optimize pre-trained model
+weights and adjust intermediate activations, providing more flexibility and capa-
+bility across diverse tasks and datasets. Moreover, GLoRA facilitates efficient
+parameter adaptation by employing a scalable, modular, layer-wise structure search
+that learns individual adapter of each layer. Originating from a unified mathemati-
+cal formulation, GLoRA exhibits strong transfer learning, few-shot learning and
+domain generalization abilities, as it adjusts to new tasks through additional dimen-
+sions on weights and activations. Comprehensive experiments demonstrate that
+GLoRA outperforms all previous methods in natural, specialized, and structured
+benchmarks, achieving superior accuracy with fewer parameters and computations
+on various datasets. Furthermore, our structural re-parameterization design ensures
+that GLoRA incurs no extra inference cost, rendering it a practical solution for
+resource-limited applications. Code is publicly available at: GitHub.
+1 Introduction
+The remarkable achievements of large-scale deep neural networks in recent years have revolutionized
+the field of artificial intelligence, demonstrating unprecedented performance across various tasks
+and domains. These highly complex models, often with millions or even billions of parameters,
+have demonstrated remarkable capabilities in areas such as computer vision [ 1], natural language
+understanding [ 2], and speech recognition [ 3]. Typically, these colossal models are pre-trained on
+general and large-scale datasets, such as ImageNet [ 4], and are subsequently adapted to downstream
+target scenarios through fine-tuning or transfer learning. Given the immense computational resources
+required by large pre-trained architectures, many parameter-efficient fine-tuning (PEFT) methods [ 5,
+6,7,8,9] have been proposed. For instance, Low-Rank Adaptation (LoRA) [ 5] aims to reduce
+the number of trainable parameters by exclusively learning pairs of rank-decomposition matrices
+whilst keeping the original model parameter static. Adapter [ 10] implements bottleneck adapter
+modules and incorporates a modest number of task-specific parameters into a fixed pre-trained model.
+Similarly, Visual Prompt Tuning (VPT) [ 7] introduces a minimal number of learnable parameters to
+the input of the Transformer, leaving the entire backbone frozen during fine-tuning.
+However, distinct downstream datasets often possess unique characteristics, such as natural, spe-
+cialized, and structured data, which differ significantly in distribution and composition. A static
+fine-tuning strategy may not sufficiently account for these disparities, thereby hindering its capacity
+to adapt to diverse datasets. To rectify this, we propose a flexible, parameter-efficient fine-tuning
+scheme in this work to manage the variations of multiple downstream datasets within a consolidated
+∗Equal contribution. Project page: https://sites.google.com/view/generalized-lora .
+Preprint. Under review.arXiv:2306.07967v1  [cs.LG]  13 Jun 2023
+
+formulation. Our approach presents a generalized version of LoRA from a unified parameter-efficient
+fine-tuning perspective, amplifying LoRA’s capability, scalability, and adaptability by rescaling and
+shifting intermediate activations, in conjunction with implementing a structural re-parameterization
+design, etc. It is challenging to devise a unified method that integrates all adjustable dimensions and
+possibilities when tuning a pre-trained network, especially in the case of transformer architectures,
+while our proposed approach presents a practicable solution to navigate this complexity.
+Our approach exhibits the following advantages: (1) It concurrently takes into account multiple
+dimensions to enhance capability and flexibility during fine-tuning, encompassing weights, features,
+and input tokens. (2) It confers a significant edge over prior integration-based NOAH [ 8] and partial
+fine-tuning method PFT [ 6] in that, subsequent to an evolutionary search procedure for the ideal
+subnet or configuration, there is no requirement to retrain the subnet, in contrast to NOAH and PFT.
+Consequently, our results are derived directly from the supernet’s model weights without necessitating
+additional training. (3) It conducts an implicit search devoid of any manual hyperparameter tuning,
+thus justifying the increased training time. (4) It incurs no additional inference cost thanks to our
+structural re-parameterization architecture, whereby the extra fine-tuning parameters will be fused to
+the proximate projection weights post-training.
+We conduct comprehensive experiments on VTAB-1K [ 11], ImageNet [ 4], and its variants [ 12,13,14,
+15]. The VTAB-1K dataset comprises 19 heterogeneous vision datasets, enveloping a broad spectrum
+of visual domains that include natural objects and scenes, textures and shapes, satellite imagery,
+among others. GLoRA surpasses all previous state-of-the-art PEFT methods by a substantial margin
+in terms of average accuracy. Additionally, we evaluate the model’s few-shot learning capacity on five
+fine-grained visual recognition datasets, akin to prior works [ 8,7], along with its ability for domain
+generalization and robustness on ImageNet-V2 [ 12], ImageNet-Sketch [ 13], ImageNet-A [ 14], and
+ImageNet-R [ 15] datasets. GLoRA significantly outperforms previous methods across all these
+benchmarks, without incurring any extra computational overhead during the inference phase.
+Our contributions:
+•We propose Generalized LoRA (GLoRA), a novel parameter-efficient fine-tuning framework.
+GLoRA enhances the low-rank adaptation approach with a more generalized prompt module
+design per layer, offering enhanced capability and flexibility in finetuning.
+•We present a unified perspective of formulation for the parameter-efficient fine-tuning
+problem through investigating various previous approaches to this task. Our proposed
+GLoRA framework is constructed based on this formulation that can achieve all fine-tuning
+paradigms from a single formulation, i.e., a One-for-All2fine-tuning architecture.
+•To evaluate the effectiveness of our proposed approach, we conduct comprehensive ex-
+periments on downstream fine-tuning, few-shot learning, and domain generalization and
+robustness using diverse datasets. Our experimental results demonstrate that GLoRA outper-
+forms all previous methods on these benchmarks while requiring only a small number of
+extra parameters and no additional inference cost.
+2 GLoRA
+In this section, we start from providing a mathematical overview of existing state-of-the-art PEFT
+methods and discuss the advantages and disadvantages for them. Then, we introduce a unified formu-
+lation of integrating all existing SOTA PEFT methods and elaborate our proposed generalized LoRA
+in detail following this unified formulation perspective. After that, a structural re-parameterization
+design is presented to show the inference efficiency without additional cost. An evolutionary search
+for optimal layer-wise configurations is also introduced to achieve the goal of generalized LoRA. We
+further give the theoretical analysis and discussions on the higher capability of the proposed method.
+2.1 Previous Solutions with Limitations
+Visual Prompt Tuning [7]: VPT introduces a small amount of task-specific learnable parameters
+into the input space while freezing the entire pre-trained Transformer backbone during downstream
+2One-for-All represents that one formulation can be transformed into various shapes of PEFT paradigms.
+2
+
+fine-tuning. It proposes two strategies: VPT-Shallow, i.e., only input space has the trainable prompt:
+[x1,Z1,E1] =L1([x0,P,E0])
+[xi,Zi,Ei] =Li([xi−1,Zi−1,Ei−1])(1)
+where Pis prompt, it is trainable and others are frozen. xis the [CLS] token, Eare the image patches.
+Prompts use <1% trainable parameters as compared to the original model.
+VPT-Deep, i.e., every layer has the trainable prompt. The formulation is:
+[xi, . . . ,Ei] =Li([xi−1,Pi−1,Ei−1]) (2)
+VTP-Deep outperforms full fine-tuning on majority of vision tasks and also has better accuracy in
+low data regime. VTP observes that when prompt append is larger than prompt add , adding prompts
+to the shallow layers is better than deep. However, VPT increases cost in the inference stage.
+AdaptFormer [16]: AdaptFormer introduces a parallel learnable branch of two linear layers and
+ReLU over the MLP block and learns only this path while freezing other parts.
+˜xℓ=ReLU (LN ( x′
+ℓ)·Wdown)·Wup (3)
+xℓ=MLP (LN ( x′
+ℓ)) +s·˜xℓ+x′
+ℓ (4)
+where x′
+ℓare the tokens after MHSA at the ℓ-th layer. Wdown andWupare a down-projection layer
+and an up-projection layer from the parallel branch, respectively. sis a scale factor.
+LoRA [5]: LoRA proposes to freeze the pre-trained model weights and injects trainable low-rank
+decomposition matrices into each layer. It learns only the residual from pre-trained weight. SOTA
+performance is achieved if comparing to prompt learning, adapters, etc., on the GPT-2 model
+family. Assuming W0,b0,xare pre-trained weights, bias and input, let fbe a linear layer, thus
+f(x) =W0x+b0. During fine-tuning, W0andb0are frozen, the learning process can be:
+f(x) =W0x+ ∆Wx+b0=WLoRAx+b0 (5)
+where ∆Wis the low-rank decomposition weights that are learnable.
+Scaling & Shifting Features (SSF) [17]: SSF modul scales and shifts features after every MLP,
+MHSA, Layernorm module during training, and performs re-parameterization during inference as it
+is a linear structure.
+y=γ⊙x+β (6)
+where yis the output features. γandβare the scale and shift factors, ⊙is the dot product. This
+method has no increase in inference but the capability is limited to feature adaptation.
+FacT [18]: FacT proposes to use a tensorization-decomposition method to store the additional
+weight, the weights of the model are tensorized into a single 3D tensor, and their additions are then
+decomposed into lightweight factors. In fine-tuning, only the factors will be updated and stored.
+f(x) =W0x+b0+UΣVx= (W0+UΣV)x+b0 (7)
+where ∆Win LoRA is decomposed into U,VandΣ. This is Tensor-Train in FacT.
+f(x) =W0x+b0+UCPV x= (W0+UCPV )x+b0 (8)
+where ∆Win LoRA is decomposed into U,C,PandV. This is Tucker in FacT.
+RepAdapter [9]: RepAdapter inserts lightweight networks into the pre-trained models, and the
+additional parameters will be re-parameterized to the nearby projection weights after training. Adding
+sequential (not parallel) adapter to both MHA and MLP, adapter is linear thus can be re-parameterized,
+and has two layers: downsampling dense FC layer to downsample inputs; upsampling downsampled
+features that are divided into group, and each group has an upsampling layer. The group of upsampling
+layers can be merged into a single sparse upsampling layer and can be re-parameterized directly into
+the original MLP/MHSA. The formulation can be:
+f(x) =W0(x+Wu(Wdx+bd) +bu) +b0
+= (W0+W0WuWd)x+W0Wubd+W0bu+b0(9)
+where Wu,Wd,buandbbare learnable weights and biases, respectively.
+3
+
+Limitations: In general, many existing PETL methods such as (VPT, Adapter) increase the inference
+time since the proposed structure cannot be re-parameterized. Direct prompt tuning is also hard
+to design as it brings in computational burden and requires hyper-parameter tuning i.e., how and
+where to place prompts. LoRA can be re-parameterized at inference but it doesn’t scale up for larger
+matrices and the adaptation ability is constrained on weight space. SSF / Repadaptor cannot learn
+the wieght change i.e., ∆Win weight space, whereas LoRA / FacT cannot efficiently learn the
+scaling and shifting of feature change i.e., ∆Hin features space. Both feature and weight space need
+flexibility while performing transfer learning from a large model. Our proposed idea in this work
+attempts at: ∆Wtuning, ∆Htuning, along with WandHscale and shift learning.
+2.2 A Unified Formulation of One-for-All
+!!"!!"#$%&'(&)
+*×+××××××+++++Output
+Input
+Figure 1: Schematic representation of a linear layer
+adapted with GLoRA.For model fine-tuning, we propose a unified for-
+mulation that encompasses all tunable dimen-
+sions, including but not limited to the weight
+space and feature space. Additionally, we adopt
+a re-parameterization strategy to incorporate
+auxiliary parameters into the adjacent projec-
+tion weights during the inference stage. Broadly
+speaking, our method serves as a superset of
+all prior solutions, i.e., one-for-all mechanism.
+By setting different support tensors to zero, our
+GLoRA can be reduced to any of these predeces-
+sor methods. Unlike NOAH [ 8], our architecture
+can be succinctly articulated as a unified mathe-
+matical equation. The consolidated formulation
+to represent all tunable spaces can be represented as follows:
+f(x) = (W0+W0A+B)x+CW 0+Db0+E+b0 (10)
+where A,B,C,D,Eare the trainable support tensors for downstream tasks in our GLoRA, W0and
+b0are frozen during whole fine-tuning. Ais utilized to scale the weight. Bhas the role to scale the
+input and shift the weight. Cis the layer-wise prompt serving a similar function of VPT-Deep, D
+andEare used to scale and shift the bias, respectively. A detailed illustration is shown in Figure 1.
+2.3 Prompt Modules
+In this subsection, we delineate the methodology for designing layer-wise adaptors or prompt
+modules for A,B,C,D,E. In a broad sense, these can take the form of scalars ,vectors ,
+low-rank decompositions , ornone . Based on the role of these trainable support tensors, they
+can be classified as follows:
+A={LoRA ,vector ,scalar ,none}
+B={LoRA ,vector ,scalar ,none}
+C={LoRA ,vector ,none}
+D={vector ,scalar ,none}
+E={vector ,scalar ,none}(11)
+where none indicates zero, if all the trainable support tensors are zero, the model will be degraded
+to the original formulation and training recipe. In particular, suppose W0∈Rd×d, we define
+Ad∈Rd×r,Au∈Rr×d,Bd∈Rd×r,Bu∈Rr×d,Cd∈Rd×r,Cu∈Rr×1,D∈Rd×1and
+E∈Rd×1. Depending upon the current subnet configuration, in case of LoRA with rank r1< r,
+Ar1
+d∈Rd×r1,Ar1u∈Rr1×dis indexed from AdandAurespectively; and A=Ar1
+d×Ar1uis used
+as the final tensor, in case of vector A∈Rd×1is indexed from Adand in case of scalar A∈R1×1
+is indexed from Ad. A similar strategy is followed for all other support tensors depending upon the
+current sampled configuration in the subnet. This weight entanglement strategy helps to increase
+the search space without increasing the number of parameters substantially and also shows faster
+convergence due to weight sharing in different subnets.
+4
+
+2.4 Structural Re-parameterization Design and Inference Efficiency Analysis
+The fundamental aspect enabling re-parameterization is the elimination of non-linearity amidst
+adjacent transformations, thereby permitting the absorption of supplementary parameters into the
+preceding ones. As mentioned in RepAdapter [ 9], the removal of such non-linear layers does
+not detrimentally impact the performance of the networks. The precise concept of GLoRA re-
+parameterization is explicated as follows:
+f(x) =Wunix+buni (12)
+where Wuniandbuniare our final unified trained weight and bias in GLoRA. They are re-
+parameterized according to Eq 10:
+Wuni=W0+W0A+B (13)
+buni=CW 0+Db0+E+b0 (14)
+As a result, the re-parameterization strategy we employ, which integrates learnable parameters into
+the neighboring projection weights, can be advantageous as it incurs no additional computational
+cost during the inference phase.
+2.5 Evolutionary Search for Optimal Layer-wise Configurations
+Our design for a unified adaptor is implemented on a per-layer basis, thus allowing for heterogeneity
+across different layers. To identify the optimal configuration for each layer, we employ the evolution-
+ary search method [ 8,6], which offers a balance of efficiency and effectiveness. Although the training
+time may increase due to this search process, it is important to note that existing work [ 8] necessitate
+an extensive hyperparameter search (such as low-rank in LoRA and FacT, as well as position and size
+of adapter modules in Adapter [ 10], dimension and structure configuration in RepAdapter [ 9], among
+others). In particular, we make use of a weight sharing strategy where a single large matrix is defined
+for each support tensor, and depending upon the component ( LoRA ,vector ,scalar , ornone ), a
+submatrix is indexed and applied for the current training iteration. This allows better parameter
+efficiency since the maximal weight sharing is done in the subnets. Contrarily, our unified prompt
+module design conducts an implicit search that eliminates the need for manual hyperparameter tuning.
+Therefore, any augmentation in training time is reasonable and well-justified.
+2.6 GLoRA with Higher Capacity
+Model capacity refers to the capability of a model to approximate a diverse range of functions. A
+method for regulating the capacity of a learning algorithm involves selecting an appropriate hypothesis
+space, essentially a set of functions that the learning algorithm is permitted to consider as potential
+solutions. The Vapnik-Chervonenkis Dimension (VC Dimension) [ 19], a measure of the capacity and
+complexity of a statistical algorithm, can be leveraged to provide a formal evidence for this assertion.
+Theorem 1 Suppose dvc(H)is the VC dimension of the hypothesis H. IfHi⊆ H uni,
+dvc(Huni)−dvc(Hi)≥ϵ s.t. ϵ ≥0
+The validity of this theorem stems from the inherent property of our problem context, where the
+hypothesis space Hiis a subset of Huniin our context. Huniencompasses all possible shattered
+scenarios of Hi. For the extreme case where the VC dimension dvc(Ho)(Hois the difference set of
+HuniandHi) is 0, the error ϵwill be zero. As per learning theory, a higher VC dimension implies
+greater model flexibility and capability of our approach.
+3 Experiments
+Datasets. We thoroughly evaluate GLoRA on VTAB-1K [ 11] benchmark at different parameter
+counts. VTAB-1K comprises of 19 image classification tasks. Tasks are clustered into three domains:
+i) Natural images ii) Specialized tasks consisting of remote sensing and medical datasets; and iii)
+Structured tasks focusing on scene structure understanding, like depth prediction and orientation
+prediction, among others. To test the few-shot fine-tuning performance, we evaluate GLoRA on five
+5
+
+Table 1: Full results on VTAB-1K benchmark . “# params” specifies the number of trainable
+parameters in backbones. Average accuracy and # params are averaged over group-wise mean values.
+Natural Specialized Structured# param (M)
+Inference Cost
+Cifar100
+Caltech101
+DTD
+Flower102
+Pets
+SVHN
+Sun397
+Camelyon
+EuroSAT
+Resisc45
+Retinopathy
+Clevr-Count
+Clevr-Dist
+DMLab
+KITTI-Dist
+dSpr-Loc
+dSpr-Ori
+sNORB-Azim
+sNORB-Ele
+Average
+Traditional Finetuning
+Full 85.8 - 68.9 87.7 64.3 97.2 86.9 87.4 38.8 79.7 95.7 84.2 73.9 56.3 58.6 41.7 65.5 57.5 46.7 25.7 29.1 68.9
+Linear 0 - 64.4 85.0 63.2 97.0 86.3 36.6 51.0 78.5 87.5 68.5 74.0 34.3 30.6 33.2 55.4 12.5 20.0 9.6 19.2 57.6
+PETL methods
+BitFit [28] 0.10 - 72.8 87.0 59.2 97.5 85.3 59.9 51.4 78.7 91.6 72.9 69.8 61.5 55.6 32.4 55.9 66.6 40.0 15.7 25.1 65.2
+VPT-Shall. [7] 0.06 ↑77.7 86.9 62.6 97.5 87.3 74.5 51.2 78.2 92.0 75.6 72.9 50.5 58.6 40.5 67.1 68.7 36.1 20.2 34.1 67.8
+VPT-Deep [7] 0.53 ↑78.8 90.8 65.8 98.0 88.3 78.1 49.6 81.8 96.1 83.4 68.4 68.5 60.0 46.5 72.8 73.6 47.9 32.9 37.8 72.0
+Adapter [10] 0.16 ↑69.2 90.1 68.0 98.8 89.9 82.8 54.3 84.0 94.9 81.9 75.5 80.9 65.3 48.6 78.3 74.8 48.5 29.9 41.6 73.9
+AdaptForm. [ 16]0.16 ↑70.8 91.2 70.5 99.1 90.9 86.6 54.8 83.0 95.8 84.4 76.3 81.9 64.3 49.3 80.3 76.3 45.7 31.7 41.1 74.7
+LoRA [5] 0.29 - 67.1 91.4 69.4 98.8 90.4 85.3 54.0 84.9 95.3 84.4 73.6 82.9 69.2 49.8 78.5 75.7 47.1 31.0 44.0 74.5
+NOAH [8] 0.36 ↑69.6 92.7 70.2 99.1 90.4 86.1 53.7 84.4 95.4 83.9 75.8 82.8 68.9 49.9 81.7 81.8 48.3 32.8 44.2 75.5
+FacT [18] 0.07 - 70.6 90.6 70.8 99.1 90.7 88.6 54.1 84.8 96.2 84.5 75.7 82.6 68.2 49.8 80.7 80.8 47.4 33.2 43.0 75.6
+SSF [17] 0.24 - 69.0 92.6 75.1 99.4 91.8 90.2 52.9 87.4 95.9 87.4 75.5 75.9 62.3 53.3 80.6 77.3 54.9 29.5 37.9 75.7
+RepAdapter [9] 0.22 - 72.4 91.6 71.0 99.2 91.4 90.7 55.1 85.3 95.9 84.6 75.9 82.3 68.0 50.4 79.9 80.4 49.2 38.6 41.0 76.1
+GLoRA 0.86 -76.4 92.9 74.6 99.6 92.5 91.5 57.8 87.3 96.8 88.0 76.0 83.1 67.3 54.5 86.2 83.8 52.9 37.0 41.4 78.0
+GLoRA 0.44 -76.5 92.3 75.2 99.6 92.3 91.2 57.5 87.3 96.7 88.1 76.1 80.6 67.2 53.4 84.5 83.5 52.8 35.2 40.8 77.6
+GLoRA 0.29 -76.1 92.7 75.3 99.6 92.4 90.5 57.2 87.5 96.7 88.1 76.1 81.0 66.2 52.4 84.9 81.8 53.3 33.3 39.8 77.3
+fine-grained visual recognition few-shot datasets: Food101 [ 20], OxfordFlowers102 [ 21], Standford-
+Cars [ 22], OxfordPets [ 23], and FGVCAircraft [ 24]. Following previous work [ 18], we evaluate 1, 2,
+4, 8, and 16 shot settings. Finally, to show the domain generalization capabilities of GLoRA, we train
+GLoRA on ImageNet [ 25] under a 16-shot setting and test on ImageNetV2 [ 12], ImageNet-Sketch
+[13], ImageNet-A [14], and ImageNet-R [15].
+Network Architecture and Implementation Details. For all our experiments, we employ ViT-B
+[1] pre-trained on ImageNet-21K as the base model. ViT-B is a 12-block deep transformer model
+with Multi Head Self-Attention (MHSA) and Multi-Layer Perceptron (MLP) modules present in each
+block. MHSA module has two linear layers; Q-K-V linear transformation layer and Output Projection
+layer, similarly, the MLP module has two linear layers. Thus each block has a total of four linear
+layers. For optimal flexibility, we implement GLoRA on all 4 layers across the 12 blocks, accounting
+for 48 GLoRA-adapted linear layers in the final model. It is important to note that GLoRA can be
+added to any linear layer in any network architecture.
+Our method requires minimal hyperparameter tuning (except optimizer hyperparameters) due to the
+inherent search mechanism. Based on the previous works [ 26,16,8], we use AdamW [ 27] optimizer
+in all our experiments, weight decay is fixed at 1e-4 and the learning rate is either 1e-4 for larger
+datasets or 5e-4 for smaller datasets. Dataset-specific learning rates are provided in the supplementary
+material. We train our supernets for 500 epochs with a fixed batch size of 64 and a cosine learning
+rate scheduler. It is important to note that irrespective of the dataset, this exact policy works well
+in all settings. Also, we don’t re-train the weights after the search process and directly inherit the
+supernet weights for evaluation. Thus all supernets of various datasets are only trained for 500 epochs
+in total. The comparison of search / training time cost with other search-based methods is provided in
+the appendix.
+3.1 VTAB-1K Dataset
+We train three different GLoRA supernet configurations to vary the number of trainable parameters.
+The difference in these is only the LoRA dimensions in the search space which varies from 8 and
+4 in the largest model, 4 and 2 in the intermediate model, and 2 in the smallest model. This added
+parameter flexibility in our method allows for user-defined trainable parameter count in the final
+models. Results on the VTAB-1k benchmark are shown in Table 1. We push the state-of-the-art
+in parameter-efficient transfer learning by up to 2.9%, Even our smallest model outperforms all
+existing methods by a substantial margin. It is worth noting that GLoRA performs competitively
+across datasets in contrast to all existing works which fail on at least one dataset; proving GLoRA’s
+high generalization capabilities. GLoRA pushes the state of the art in as many as 14 out of 19 datasets
+in the VTAB-1k benchmark while performing competitively on the remaining datasets too.
+6

@@ -84,3 +84,4 @@ A Control-Centric Benchmark for Video Prediction,26 Apr 2023,26 Apr 2023,https:/
 A ConvNet for the 2020s,10 Jan 2022,2 Mar 2022,https://arxiv.org/pdf/2201.03545,CVPR 2022
 Emerging Properties in Self-Supervised Vision Transformers,29 Apr 2021,24 May 2021,https://arxiv.org/pdf/2104.14294
 MaxViT: Multi-Axis Vision Transformer,4 Apr 2022,9 Sep 2022,https://arxiv.org/pdf/2204.01697,ECCV 2022
+Track Anything: Segment Anything Meets Videos,24 Apr 2023,28 Apr 2023,https://arxiv.org/pdf/2304.11968
