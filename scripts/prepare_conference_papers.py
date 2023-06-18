@@ -15,6 +15,7 @@ import math
 
 # from scripts.prepare_arxiv import prepareQA
 
+SEMANTIC_SCHOLAR_API_URL = "https://api.semanticscholar.org/graph/v1/paper/batch"
 CONFERENCE_PAPER_METADATA_PATH = Path("data/conference")
 QA_DATA_PATH = Path("data/qa")
 
@@ -32,6 +33,7 @@ class Paper:
         self.modified: str = modified
         self.url: str = url
         self.conference: str = conference
+        self.citations: int
 
 
 def fetch_conference_papers(path: str) -> List[Paper]:
@@ -56,6 +58,36 @@ def fetch_conference_papers(path: str) -> List[Paper]:
                 papers.append(paper)
             i += 1
     return papers
+
+
+def get_batch_citations(paper_list: List[Paper]):
+    res = requests.post(
+        SEMANTIC_SCHOLAR_API_URL,
+        params={"fields": "citationCount,title"},
+        json={
+            "ids": [
+                "ARXIV:" + paper.url.split("/")[-1]
+                for paper in paper_list
+                if "arxiv" in paper.url
+            ]
+        },
+        timeout=3000,
+    )
+    print(res.content)
+    return res.json()
+
+
+def fetch_top_conference_papers(
+    path: str = "data/conference/CVPR_2023.txt", k: int = 100
+) -> List[Paper]:
+    """Sort and return top k conference papers by citation count"""
+    papers = fetch_conference_papers(path)
+    papers_with_citation_count = get_batch_citations(papers)
+    sorted_papers = sorted(
+        papers_with_citation_count, key=lambda x: x["citationCount"], reverse=True
+    )
+
+    return sorted_papers[:k]
 
 
 def prepare_qa_for_paper(paper: Paper) -> None:

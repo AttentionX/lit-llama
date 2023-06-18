@@ -17,3 +17,4 @@ original_adapter.py
 
 .env
 venv
+*.ipynb
